@@ -1,0 +1,10 @@
+*.~vsdx
+*.pdf
+~*.xlsx
+~*.docx
+~*.dotx
+*.~vsd
+
+.vscode/
+.metals/
+.VSCodeCounter/

@@ -1,0 +1,29 @@
+*.*
+*
+!*/
+!Makefile
+!*.mk
+!*.scala
+!*.[cSh]
+!*.v
+!*.cpp
+!*.cc
+!.gitignore
+!.scalafmt.conf
+!build.sc
+!README.md
+!playground/doc/*
+!utils/*
+build/
+
+# mill
+out/
+.bsp/
+.idea/
+.idea_modules/
+test_run_dir/
+
+# vscode
+.metals/
+.vscode/
+.VSCodeCounter/
