@@ -9,6 +9,11 @@ BUILD_DIR = $(CHISEL_DIR)/build
 obj_dir/V$(TOP_NAME): src/* $(SRC_FILE)
 	verilator --cc -Wno-fatal --exe --trace-fst --trace-structs -LDFLAGS "-lpthread" --build src/sim_mycpu.cpp $(SRC_FILE) -I$(SRC_DIR) --top $(TOP_NAME) -j `nproc`
 
+envtest:
+	$(call git_commit, "env test") # DO NOT REMOVE THIS LINE!!!
+	$(MAKE) -C $(CHISEL_DIR) verilog
+	$(MAKE) lab1
+
 verilog:
 	$(MAKE) -C $(CHISEL_DIR) verilog
 	cp $(CHISEL_DIR)/build/PuaCpu.v $(SRC_DIR)

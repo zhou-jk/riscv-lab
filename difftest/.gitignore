@@ -1,7 +1,4 @@
 *.vcd
 obj_dir
 
-core/*
-!core/top_sram_wrapper.v
-
 trace.*
