@@ -13,5 +13,7 @@ class WriteBackUnit extends Module {
     val debug          = new DEBUG()
   })
 
+  // 写回阶段完成数据的写回操作
+  // 同时该阶段还负责差分测试的比对工作
   // TODO: 完成WriteBackUnit模块的逻辑
 }

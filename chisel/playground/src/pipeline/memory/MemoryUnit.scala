@@ -13,6 +13,8 @@ class MemoryUnit extends Module {
     val writeBackStage = Output(new MemoryUnitWriteBackUnit())
   })
 
+  // 访存阶段完成指令的访存操作
+
   io.writeBackStage.data.pc                        := io.memoryStage.data.pc
   io.writeBackStage.data.info                      := io.memoryStage.data.info
   io.writeBackStage.data.rd_info.wdata             := io.memoryStage.data.rd_info.wdata

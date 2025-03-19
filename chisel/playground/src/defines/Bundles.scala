@@ -22,7 +22,7 @@ class RdInfo extends Bundle {
 }
 
 class Info extends Bundle {
-  val valid      = Bool()
+  val valid      = Bool() // 用于标识当前流水级中的指令是否有效
   val src1_raddr = UInt(REG_ADDR_WID.W)
   val src2_raddr = UInt(REG_ADDR_WID.W)
   val op         = FuOpType()
@@ -52,8 +52,8 @@ class DataSram extends Bundle {
 }
 
 class DEBUG extends Bundle {
-  val pc       = Output(UInt(XLEN.W))
-  val commit   = Output(Bool())
-  val rf_wnum  = Output(UInt(REG_ADDR_WID.W))
-  val rf_wdata = Output(UInt(XLEN.W))
+  val commit   = Output(Bool()) // 写回阶段的commit信号，仅在每条指令提交时置为true
+  val pc       = Output(UInt(XLEN.W)) // 写回阶段的pc
+  val rf_wnum  = Output(UInt(REG_ADDR_WID.W)) // 写回阶段的寄存器写地址
+  val rf_wdata = Output(UInt(XLEN.W)) // 写回阶段的寄存器写数据
 }
