@@ -25,5 +25,10 @@ class MemoryStage extends Module {
 
   val data = RegInit(0.U.asTypeOf(new ExeMemData()))
 
-  // TODO: 完成MemoryStage模块的逻辑
+  // 完成MemoryStage模块的逻辑
+  when(true.B) {
+    data := io.executeUnit.data
+  }
+
+  io.memoryUnit.data := data
 }

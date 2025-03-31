@@ -34,8 +34,18 @@ object RV32I_ALUInstr extends HasInstrType with CoreParameter {
   // 在Decoder模块中搭配ListLookup函数使用
   val table = Array(
     // ADD指令将被解析为InstrR类型的指令，功能单元类型为alu，功能单元操作类型为add
-    ADD -> List(InstrR, FuType.alu, ALUOpType.add)
-    // TODO: 完成其他指令的解析
+    // R型指令
+    ADD  -> List(InstrR, FuType.alu, ALUOpType.add),
+    SUB  -> List(InstrR, FuType.alu, ALUOpType.sub),
+    SLL  -> List(InstrR, FuType.alu, ALUOpType.sll),
+    SLT  -> List(InstrR, FuType.alu, ALUOpType.slt),
+    SLTU -> List(InstrR, FuType.alu, ALUOpType.sltu),
+    XOR  -> List(InstrR, FuType.alu, ALUOpType.xor),
+    SRL  -> List(InstrR, FuType.alu, ALUOpType.srl),
+    SRA  -> List(InstrR, FuType.alu, ALUOpType.sra),
+    OR   -> List(InstrR, FuType.alu, ALUOpType.or),
+    AND  -> List(InstrR, FuType.alu, ALUOpType.and),
+    
   )
 }
 
@@ -51,7 +61,12 @@ object RV64IInstr extends HasInstrType {
   def SUBW  = BitPat("b0100000_?????_?????_000_?????_0111011")
 
   val table = Array(
-    // TODO: 完成RV64I指令集的解析
+    // R型指令
+    ADDW  -> List(InstrR, FuType.alu, ALUOpType.addw),
+    SUBW  -> List(InstrR, FuType.alu, ALUOpType.subw),
+    SLLW  -> List(InstrR, FuType.alu, ALUOpType.sllw),
+    SRLW  -> List(InstrR, FuType.alu, ALUOpType.srlw),
+    SRAW  -> List(InstrR, FuType.alu, ALUOpType.sraw),
   )
 }
 
