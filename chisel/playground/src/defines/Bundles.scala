@@ -28,6 +28,10 @@ class Info extends Bundle {
   val op         = FuOpType()
   val reg_wen    = Bool()
   val reg_waddr  = UInt(REG_ADDR_WID.W)
+  val imm        = UInt(XLEN.W)
+  val src1_ren   = Bool()
+  val src2_ren   = Bool()
+  val inst       = UInt(32.W)
 }
 
 class SrcReadSignal extends Bundle {

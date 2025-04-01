@@ -4,6 +4,18 @@ import chisel3._
 import chisel3.util._
 
 object RV32I_ALUInstr extends HasInstrType with CoreParameter {
+  val LUI_OPCODE   = "b0110111".U(7.W) // LUI opcode
+  val AUIPC_OPCODE = "b0010111".U(7.W) // AUIPC opcode
+  val JAL_OPCODE   = "b1101111".U(7.W) // JAL opcode
+  val JALR_OPCODE  = "b1100111".U(7.W) // JALR opcode
+  val BRANCH_OPCODE= "b1100011".U(7.W) // Branch (B-type) opcode
+  val LOAD_OPCODE  = "b0000011".U(7.W) // Load (I-type) opcode
+  val STORE_OPCODE = "b0100011".U(7.W) // Store (S-type) opcode
+  val R_OPCODE     = "b0110011".U(7.W) // R-type opcode
+  val I_OPCODE     = "b0010011".U(7.W) // I-type (ALU immediate) opcode
+  val RW_OPCODE    = "b0111011".U(7.W) // R-type Word opcode (RV64)
+  val IW_OPCODE    = "b0011011".U(7.W) // I-type Word opcode (RV64)
+
   def ADDI = BitPat("b????????????_?????_000_?????_0010011")
   def SLLI = if (XLEN == 32) BitPat("b0000000?????_?????_001_?????_0010011")
   else BitPat("b000000??????_?????_001_?????_0010011")
@@ -45,6 +57,21 @@ object RV32I_ALUInstr extends HasInstrType with CoreParameter {
     SRA  -> List(InstrR, FuType.alu, ALUOpType.sra),
     OR   -> List(InstrR, FuType.alu, ALUOpType.or),
     AND  -> List(InstrR, FuType.alu, ALUOpType.and),
+
+    // I型指令
+    ADDI  -> List(InstrI, FuType.alu, ALUOpType.add),
+    SLLI  -> List(InstrI, FuType.alu, ALUOpType.sll),
+    SLTI  -> List(InstrI, FuType.alu, ALUOpType.slt),
+    SLTIU -> List(InstrI, FuType.alu, ALUOpType.sltu),
+    XORI  -> List(InstrI, FuType.alu, ALUOpType.xor),
+    SRLI  -> List(InstrI, FuType.alu, ALUOpType.srl),
+    SRAI  -> List(InstrI, FuType.alu, ALUOpType.sra),
+    ORI   -> List(InstrI, FuType.alu, ALUOpType.or),
+    ANDI  -> List(InstrI, FuType.alu, ALUOpType.and),
+
+    // U型指令
+    LUI   -> List(InstrU, FuType.alu, ALUOpType.add),
+    AUIPC -> List(InstrU, FuType.alu, ALUOpType.add),
     
   )
 }
@@ -67,6 +94,12 @@ object RV64IInstr extends HasInstrType {
     SLLW  -> List(InstrR, FuType.alu, ALUOpType.sllw),
     SRLW  -> List(InstrR, FuType.alu, ALUOpType.srlw),
     SRAW  -> List(InstrR, FuType.alu, ALUOpType.sraw),
+
+    // I型指令
+    ADDIW -> List(InstrI, FuType.alu, ALUOpType.addw),
+    SLLIW -> List(InstrI, FuType.alu, ALUOpType.sllw),
+    SRLIW -> List(InstrI, FuType.alu, ALUOpType.srlw),
+    SRAIW -> List(InstrI, FuType.alu, ALUOpType.sraw),
   )
 }
 
