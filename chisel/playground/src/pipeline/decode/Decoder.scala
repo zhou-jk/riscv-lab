@@ -52,7 +52,10 @@ class Decoder extends Module with HasInstrType {
   io.out.info.src1_raddr := rs
   io.out.info.src2_raddr := rt
   io.out.info.op         := fuOpType
+<<<<<<< HEAD
   io.out.info.fusel      := fuType
+=======
+>>>>>>> f0066573360ee8aaf9863c943dcda69a0bda5217
   io.out.info.reg_wen    := isRegWen(instrType) && is_valid_instr_type
   io.out.info.reg_waddr  := rd
 

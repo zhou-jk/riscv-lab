@@ -30,6 +30,30 @@ class Core extends Module {
   fetchUnit.instSram <> io.instSram
   fetchUnit.decodeStage <> decodeStage.fetchUnit
 
-  // TODO: 完成Core模块的逻辑
-  // 在该模块中，需要将各个模块连接起来，形成一个完整的CPU核心
+  // 完成Core模块的逻辑
+  decodeStage.decodeUnit <> decodeUnit.decodeStage
+
+  regfile.read.src1.raddr := decodeUnit.regfile.src1.raddr
+  regfile.read.src2.raddr := decodeUnit.regfile.src2.raddr
+
+  decodeUnit.regfile.src1.rdata := regfile.read.src1.rdata
+  decodeUnit.regfile.src2.rdata := regfile.read.src2.rdata
+  decodeUnit.executeStage <> executeStage.decodeUnit
+
+  executeStage.executeUnit <> executeUnit.executeStage
+  executeUnit.memoryStage  <> memoryStage.executeUnit
+
+  memoryStage.memoryUnit <> memoryUnit.memoryStage
+
+  executeUnit.dataSram <> io.dataSram
+
+  memoryUnit.writeBackStage <> writeBackStage.memoryUnit
+
+  writeBackStage.writeBackUnit <> writeBackUnit.writeBackStage
+
+  regfile.write.wen   := writeBackUnit.regfile.wen
+  regfile.write.waddr := writeBackUnit.regfile.waddr
+  regfile.write.wdata := writeBackUnit.regfile.wdata
+
+  io.debug <> writeBackUnit.debug
 }

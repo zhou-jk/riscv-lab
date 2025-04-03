@@ -24,5 +24,10 @@ class ExecuteStage extends Module {
 
   val data = RegInit(0.U.asTypeOf(new IdExeData()))
 
-  // TODO: 完成ExecuteStage模块的逻辑
+  // 完成ExecuteStage模块的逻辑
+  when(true.B) {
+    data := io.decodeUnit.data
+  }
+
+  io.executeUnit.data := data
 }
