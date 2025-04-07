@@ -23,12 +23,14 @@ class WriteBackUnit extends Module {
 
   val final_reg_wen = wb_info.valid && wb_info.reg_wen
 
+  val wdata_selected = wb_rd_info.wdata(wb_info.fusel)
+
   io.regfile.wen   := final_reg_wen
   io.regfile.waddr := wb_info.reg_waddr
-  io.regfile.wdata := wb_rd_info.wdata
+  io.regfile.wdata := wdata_selected
 
   io.debug.commit   := wb_info.valid
   io.debug.pc       := wb_pc
   io.debug.rf_wnum  := wb_info.reg_waddr
-  io.debug.rf_wdata := wb_rd_info.wdata
+  io.debug.rf_wdata := wdata_selected
 }

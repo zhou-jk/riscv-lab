@@ -43,26 +43,11 @@ class Alu extends Module {
     (opType === ALUOpType.or)    -> (src1 | src2),
     (opType === ALUOpType.and)   -> (src1 & src2),
 
-    (opType === ALUOpType.addw)  -> {
-                                      val result_32 = src1_32 + src2_32
-                                      signExtend32To64(result_32)
-                                    },
-    (opType === ALUOpType.subw)  -> {
-                                      val result_32 = src1_32 - src2_32
-                                      signExtend32To64(result_32)
-                                    },
-    (opType === ALUOpType.sllw)  -> {
-                                      val result_32 = src1_32 << shamt32
-                                      signExtend32To64(result_32)
-                                    },
-    (opType === ALUOpType.srlw)  -> {
-                                      val result_32 = (src1_32.asUInt >> shamt32).asUInt
-                                      signExtend32To64(result_32)
-                                    },
-    (opType === ALUOpType.sraw)  -> {
-                                      val result_32 = (src1_32.asSInt >> shamt32).asUInt
-                                      signExtend32To64(result_32)
-                                    }
+    (opType === ALUOpType.addw)  -> {signExtend32To64(src1_32 + src2_32)},
+    (opType === ALUOpType.subw)  -> {signExtend32To64(src1_32 - src2_32)},
+    (opType === ALUOpType.sllw)  -> {signExtend32To64(src1_32 << shamt32)},
+    (opType === ALUOpType.srlw)  -> {signExtend32To64((src1_32.asUInt >> shamt32).asUInt)},
+    (opType === ALUOpType.sraw)  -> {signExtend32To64((src1_32.asSInt >> shamt32).asUInt)}
   ))
 
   io.result := alu_result

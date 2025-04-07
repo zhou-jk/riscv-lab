@@ -18,7 +18,7 @@ class SrcInfo extends Bundle {
 }
 
 class RdInfo extends Bundle {
-  val wdata = UInt(XLEN.W)
+  val wdata = Vec(FuType.num, UInt(XLEN.W))
 }
 
 class Info extends Bundle {
@@ -26,6 +26,7 @@ class Info extends Bundle {
   val src1_raddr = UInt(REG_ADDR_WID.W)
   val src2_raddr = UInt(REG_ADDR_WID.W)
   val op         = FuOpType()
+  val fusel      = FuType()
   val reg_wen    = Bool()
   val reg_waddr  = UInt(REG_ADDR_WID.W)
   val imm        = UInt(XLEN.W)
