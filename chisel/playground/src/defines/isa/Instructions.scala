@@ -19,9 +19,10 @@ trait HasInstrType {
 
 // 功能单元类型 Function Unit Type
 object FuType {
-  def num     = 2
+  def num     = 3
   def alu     = 0.U // arithmetic logic unit
   def mdu     = 1.U // multiplication-division unit
+  def lsu     = 2.U     // load store unit
   def apply() = UInt(log2Up(num).W)
 }
 
