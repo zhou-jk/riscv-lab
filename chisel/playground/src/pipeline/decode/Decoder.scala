@@ -26,24 +26,30 @@ class Decoder extends Module with HasInstrType {
 
   val (rs, rt, rd) = (inst(19, 15), inst(24, 20), inst(11, 7))
 
+  // 为不同指令格式准备立即数
   val imm_i = inst(31, 20)
+  val imm_s = Cat(inst(31, 25), inst(11, 7))
   val imm_u = inst(31, 12)
 
   val imm_i_sext = Cat(Fill(XLEN - 12, imm_i(11)), imm_i).asUInt
+  val imm_s_sext = Cat(Fill(XLEN - 12, imm_s(11)), imm_s).asUInt
   val imm_u_sext = Cat(Fill(XLEN - 32, imm_u(19)), imm_u, 0.U(12.W)).asUInt
 
   val final_imm = MuxLookup(instrType, 0.U(XLEN.W))(Seq(
     InstrI -> imm_i_sext,
+    InstrS -> imm_s_sext,
     InstrU -> imm_u_sext,
   ))
 
   val src1_ren = MuxLookup(instrType, false.B)(Seq(
     InstrR -> true.B,
     InstrI -> true.B,
+    InstrS -> true.B,
   ))
 
   val src2_ren = MuxLookup(instrType, false.B)(Seq(
     InstrR -> true.B,
+    InstrS -> true.B,
   ))
 
   // 完成Decoder模块的逻辑

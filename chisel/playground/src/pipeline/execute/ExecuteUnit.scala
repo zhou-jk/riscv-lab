@@ -15,7 +15,6 @@ class ExecuteUnit extends Module {
   })
 
   // 执行阶段完成指令的执行操作
-
   val fu = Module(new Fu()).io
   fu.data.pc       := io.executeStage.data.pc
   fu.data.info     := io.executeStage.data.info
@@ -23,10 +22,15 @@ class ExecuteUnit extends Module {
 
   io.dataSram <> fu.dataSram
 
-  // 完成ExecuteUnit模块的逻辑
-
-  io.memoryStage.data.pc       := fu.data.pc
-  io.memoryStage.data.info     := fu.data.info
-  io.memoryStage.data.src_info := fu.data.src_info
-  io.memoryStage.data.rd_info  := fu.data.rd_info
+  val mem_data = Wire(new ExeMemData())
+  mem_data.pc := fu.data.pc
+  mem_data.info := fu.data.info
+  mem_data.rd_info := fu.data.rd_info
+  
+  val src_info_mem = Wire(new SrcInfo())
+  src_info_mem.src1_data := fu.data.src_info.src1_data
+  src_info_mem.src2_data := io.dataSram.rdata
+  
+  mem_data.src_info := src_info_mem
+  io.memoryStage.data := mem_data
 }

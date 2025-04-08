@@ -45,9 +45,11 @@ class Core extends Module {
 
   memoryStage.memoryUnit <> memoryUnit.memoryStage
 
-  executeUnit.dataSram <> io.dataSram
+  io.dataSram.rdata <> memoryUnit.rdata
 
   memoryUnit.writeBackStage <> writeBackStage.memoryUnit
+
+  executeUnit.dataSram <> io.dataSram
 
   writeBackStage.writeBackUnit <> writeBackUnit.writeBackStage
 
