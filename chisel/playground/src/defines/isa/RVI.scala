@@ -107,5 +107,6 @@ object RVIInstr extends CoreParameter {
   val table = RV32I_ALUInstr.table ++
     (if (XLEN == 64) RV64IInstr.table else Array.empty) ++
     (if (cpuConfig.hasMExtension) RV64MInstr.table else Array.empty) ++
-    RVMemInstr.table
+    RVMemInstr.table ++
+    RVBranchInstr.table
 }
