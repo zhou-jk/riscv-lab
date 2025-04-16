@@ -48,7 +48,8 @@ public:
     uint64_t debug_reg_num;
     uint64_t debug_reg_wdata;
     uint32_t debug_inst;
-    bool debug_is_branch;
+    bool debug_is_mcycle;
+    bool debug_is_minstret;
     bool int_allow;
     bool difftest_mode = false;
     rv_core(rv_systembus &systembus, uint8_t hart_id = 0) : systembus(systembus), priv(hart_id, pc, systembus)
@@ -110,9 +111,10 @@ private:
     void exec(bool meip, bool msip, bool mtip, bool seip)
     {
         debug_pc = pc;
-        debug_is_branch = false;
         debug_reg_num = 0;
         debug_reg_wdata = 0;
+        debug_is_mcycle = false;
+        debug_is_minstret = false;
         if (run_riscv_test && priv.get_cycle() >= 2e6) // 默认是1e6
         {
             printf("\033[31mTest timeout! at pc 0x%lx\n\033[0m", pc);
@@ -186,7 +188,6 @@ private:
                     priv.raise_trap(csr_cause_def(exc_instr_misalign), npc);
                 else
                 {
-                    debug_is_branch = true;
                     set_GPR(inst->j_type.rd, pc + 4);
                     pc = npc;
                     new_pc = true;
@@ -202,7 +203,6 @@ private:
                     priv.raise_trap(csr_cause_def(exc_instr_misalign), npc);
                 else
                 {
-                    debug_is_branch = true;
                     set_GPR(inst->j_type.rd, pc + 4);
                     pc = npc;
                     new_pc = true;
@@ -218,7 +218,6 @@ private:
                 case FUNCT3_BEQ:
                     if (GPR[inst->b_type.rs1] == GPR[inst->b_type.rs2])
                     {
-                        debug_is_branch = true;
                         npc = pc + offset;
                         new_pc = true;
                     }
@@ -226,7 +225,6 @@ private:
                 case FUNCT3_BNE:
                     if (GPR[inst->b_type.rs1] != GPR[inst->b_type.rs2])
                     {
-                        debug_is_branch = true;
                         npc = pc + offset;
                         new_pc = true;
                     }
@@ -234,7 +232,6 @@ private:
                 case FUNCT3_BLT:
                     if (GPR[inst->b_type.rs1] < GPR[inst->b_type.rs2])
                     {
-                        debug_is_branch = true;
                         npc = pc + offset;
                         new_pc = true;
                     }
@@ -242,7 +239,6 @@ private:
                 case FUNCT3_BGE:
                     if (GPR[inst->b_type.rs1] >= GPR[inst->b_type.rs2])
                     {
-                        debug_is_branch = true;
                         npc = pc + offset;
                         new_pc = true;
                     }
@@ -250,7 +246,6 @@ private:
                 case FUNCT3_BLTU:
                     if ((uint64_t)GPR[inst->b_type.rs1] < (uint64_t)GPR[inst->b_type.rs2])
                     {
-                        debug_is_branch = true;
                         npc = pc + offset;
                         new_pc = true;
                     }
@@ -258,7 +253,6 @@ private:
                 case FUNCT3_BGEU:
                     if ((uint64_t)GPR[inst->b_type.rs1] >= (uint64_t)GPR[inst->b_type.rs2])
                     {
-                        debug_is_branch = true;
                         npc = pc + offset;
                         new_pc = true;
                     }
@@ -727,7 +721,11 @@ private:
                                         else
                                         {
                                             printf("Failed with value 0x%lx\n", GPR[10]);
-                                            dump_pc_history();
+                                            while (!trace.empty())
+                                            {
+                                                printf("%lx\n", trace.front());
+                                                trace.pop();
+                                            }
                                             exit(1);
                                         }
                                     }
@@ -807,7 +805,14 @@ private:
                     if (!ri)
                         ri = !priv.csr_write(csr_index, GPR[inst->i_type.rs1]);
                     if (!ri && inst->i_type.rd)
+                    {
+                        if (csr_index == csr_mcycle || csr_index == csr_minstret)
+                        {
+                            debug_is_mcycle = csr_index == csr_mcycle;
+                            debug_is_minstret = csr_index == csr_minstret;
+                        }
                         set_GPR(inst->i_type.rd, csr_result);
+                    }
                     break;
                 }
                 case FUNCT3_CSRRS:
@@ -820,7 +825,14 @@ private:
                     if (!ri && inst->i_type.rs1)
                         ri = !priv.csr_write(csr_index, csr_result | GPR[inst->i_type.rs1]);
                     if (!ri && inst->i_type.rd)
+                    {
+                        if (csr_index == csr_mcycle || csr_index == csr_minstret)
+                        {
+                            debug_is_mcycle = csr_index == csr_mcycle;
+                            debug_is_minstret = csr_index == csr_minstret;
+                        }
                         set_GPR(inst->i_type.rd, csr_result);
+                    }
                     break;
                 }
                 case FUNCT3_CSRRC:
@@ -833,7 +845,14 @@ private:
                     if (!ri && inst->i_type.rs1)
                         ri = !priv.csr_write(csr_index, csr_result & (~GPR[inst->i_type.rs1]));
                     if (!ri && inst->i_type.rd)
+                    {
+                        if (csr_index == csr_mcycle || csr_index == csr_minstret)
+                        {
+                            debug_is_mcycle = csr_index == csr_mcycle;
+                            debug_is_minstret = csr_index == csr_minstret;
+                        }
                         set_GPR(inst->i_type.rd, csr_result);
+                    }
                     break;
                 }
                 case FUNCT3_CSRRWI:
@@ -846,7 +865,14 @@ private:
                     if (!ri)
                         ri = !priv.csr_write(csr_index, inst->i_type.rs1);
                     if (!ri && inst->i_type.rd)
+                    {
+                        if (csr_index == csr_mcycle || csr_index == csr_minstret)
+                        {
+                            debug_is_mcycle = csr_index == csr_mcycle;
+                            debug_is_minstret = csr_index == csr_minstret;
+                        }
                         set_GPR(inst->i_type.rd, csr_result);
+                    }
                     break;
                 }
                 case FUNCT3_CSRRSI:
@@ -859,7 +885,14 @@ private:
                     if (!ri && inst->i_type.rs1)
                         ri = !priv.csr_write(csr_index, csr_result | inst->i_type.rs1);
                     if (!ri && inst->i_type.rd)
+                    {
+                        if (csr_index == csr_mcycle || csr_index == csr_minstret)
+                        {
+                            debug_is_mcycle = csr_index == csr_mcycle;
+                            debug_is_minstret = csr_index == csr_minstret;
+                        }
                         set_GPR(inst->i_type.rd, csr_result);
+                    }
                     break;
                 }
                 case FUNCT3_CSRRCI:
@@ -872,7 +905,14 @@ private:
                     if (!ri && inst->i_type.rs1)
                         ri = !priv.csr_write(csr_index, csr_result & (~(inst->i_type.rs1)));
                     if (!ri && inst->i_type.rd)
+                    {
+                        if (csr_index == csr_mcycle || csr_index == csr_minstret)
+                        {
+                            debug_is_mcycle = csr_index == csr_mcycle;
+                            debug_is_minstret = csr_index == csr_minstret;
+                        }
                         set_GPR(inst->i_type.rd, csr_result);
+                    }
                     break;
                 }
                 default:

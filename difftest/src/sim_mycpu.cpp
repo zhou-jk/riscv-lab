@@ -17,8 +17,6 @@ bool dual_issue = false;
 bool perf_counter = false;
 bool init_gprs = false;
 bool write_append = false;
-bool has_delayslot = false;
-bool only_modeM = false;
 const uint64_t commit_timeout = 3000;
 const uint64_t print_pc_cycle = 5e5;
 long trace_start_time = 0; // -starttrace [time]
@@ -47,9 +45,9 @@ void assert(bool expr, const char *msg = "")
     }
 }
 
-#include "nscscc_sram.hpp"
-#include "nscscc_sram_slave.hpp"
-#include "nscscc_sram_xbar.hpp"
+#include "axi4.hpp"
+#include "axi4_mem.hpp"
+#include "axi4_xbar.hpp"
 #include "mmio_mem.hpp"
 
 #include <iostream>
@@ -59,21 +57,47 @@ void assert(bool expr, const char *msg = "")
 #include <csignal>
 #include <sstream>
 
-void connect_wire(nscscc_sram_ptr &sram_ptr, Vtop *top)
+void connect_wire(axi4_ptr<32, 64, 4> &mmio_ptr, Vtop *top)
 {
-    sram_ptr.inst_sram_en = &(top->inst_sram_en);
-    sram_ptr.inst_sram_addr = &(top->inst_sram_addr);
-    sram_ptr.inst_sram_wen = &(top->inst_sram_wen);
-    sram_ptr.inst_sram_rdata = &(top->inst_sram_rdata);
-    sram_ptr.inst_sram_wdata = &(top->inst_sram_wdata);
-    sram_ptr.data_sram_en = &(top->data_sram_en);
-    sram_ptr.data_sram_addr = &(top->data_sram_addr);
-    sram_ptr.data_sram_wen = &(top->data_sram_wen);
-    sram_ptr.data_sram_rdata = &(top->data_sram_rdata);
-    sram_ptr.data_sram_wdata = &(top->data_sram_wdata);
+    // connect
+    // mmio
+    // aw
+    mmio_ptr.awaddr = &(top->axi_awaddr);
+    mmio_ptr.awburst = &(top->axi_awburst);
+    mmio_ptr.awid = &(top->axi_awid);
+    mmio_ptr.awlen = &(top->axi_awlen);
+    mmio_ptr.awready = &(top->axi_awready);
+    mmio_ptr.awsize = &(top->axi_awsize);
+    mmio_ptr.awvalid = &(top->axi_awvalid);
+    // w
+    mmio_ptr.wdata = &(top->axi_wdata);
+    mmio_ptr.wlast = &(top->axi_wlast);
+    mmio_ptr.wready = &(top->axi_wready);
+    mmio_ptr.wstrb = &(top->axi_wstrb);
+    mmio_ptr.wvalid = &(top->axi_wvalid);
+    // b
+    mmio_ptr.bid = &(top->axi_bid);
+    mmio_ptr.bready = &(top->axi_bready);
+    mmio_ptr.bresp = &(top->axi_bresp);
+    mmio_ptr.bvalid = &(top->axi_bvalid);
+    // ar
+    mmio_ptr.araddr = &(top->axi_araddr);
+    mmio_ptr.arburst = &(top->axi_arburst);
+    mmio_ptr.arid = &(top->axi_arid);
+    mmio_ptr.arlen = &(top->axi_arlen);
+    mmio_ptr.arready = &(top->axi_arready);
+    mmio_ptr.arsize = &(top->axi_arsize);
+    mmio_ptr.arvalid = &(top->axi_arvalid);
+    // r
+    mmio_ptr.rdata = &(top->axi_rdata);
+    mmio_ptr.rid = &(top->axi_rid);
+    mmio_ptr.rlast = &(top->axi_rlast);
+    mmio_ptr.rready = &(top->axi_rready);
+    mmio_ptr.rresp = &(top->axi_rresp);
+    mmio_ptr.rvalid = &(top->axi_rvalid);
 }
 
-void riscv_test_run(Vtop *top, nscscc_sram_ref &mmio_ref, const char *riscv_test_path)
+void riscv_test_run(Vtop *top, axi4_ref<32, 64, 4> &mmio_ref, const char *riscv_test_path)
 {
 
     // setup cemu {
@@ -95,9 +119,9 @@ void riscv_test_run(Vtop *top, nscscc_sram_ref &mmio_ref, const char *riscv_test
     // setup cemu }
 
     // setup rtl {
-    nscscc_sram mmio_sigs;
-    nscscc_sram_ref mmio_sigs_ref(mmio_sigs);
-    nscscc_sram_xbar mmio;
+    axi4<32, 64, 4> mmio_sigs;
+    axi4_ref<32, 64, 4> mmio_sigs_ref(mmio_sigs);
+    axi4_xbar<32, 64, 4> mmio;
 
     mmio_mem rtl_mem(128 * 1024 * 1024, riscv_test_path);
     assert(mmio.add_dev(0x80000000, 0x80000000, &rtl_mem));
@@ -113,8 +137,6 @@ void riscv_test_run(Vtop *top, nscscc_sram_ref &mmio_ref, const char *riscv_test
     uint64_t ticks = 0;
     uint64_t last_commit = ticks;
     uint64_t pc_cnt = print_pc_cycle;
-    int delayslot_cnt = 0;
-    bool delayslot_flag = true;
     int delay = 1500;
     while (!Verilated::gotFinish() && sim_time > 0 && running)
     {
@@ -144,18 +166,7 @@ void riscv_test_run(Vtop *top, nscscc_sram_ref &mmio_ref, const char *riscv_test
         if (((top->clock && !dual_issue) || dual_issue) && top->debug_commit)
         { // instr retire
             // cemu_rvcore.import_diff_test_info(top->debug_csr_mcycle, top->debug_csr_minstret, top->debug_csr_mip, top->debug_csr_interrupt);
-            if (has_delayslot)
-            {
-                if (!delayslot_cnt)
-                {
-                    cemu_rvcore.step(0, 0, 0, 0);
-                    delayslot_flag = true;
-                }
-            }
-            else
-            {
-                cemu_rvcore.step(0, 0, 0, 0);
-            }
+            cemu_rvcore.step(0, 0, 0, 0);
             last_commit = ticks;
             if (pc_cnt++ >= print_pc_cycle && print_pc)
             {
@@ -165,8 +176,7 @@ void riscv_test_run(Vtop *top, nscscc_sram_ref &mmio_ref, const char *riscv_test
             if ((top->debug_pc != cemu_rvcore.debug_pc ||
                  cemu_rvcore.debug_reg_num != 0 &&
                      (top->debug_rf_wnum != cemu_rvcore.debug_reg_num ||
-                      top->debug_rf_wdata != cemu_rvcore.debug_reg_wdata)) &&
-                !delayslot_cnt)
+                      top->debug_rf_wdata != cemu_rvcore.debug_reg_wdata && !(cemu_rvcore.debug_is_mcycle || cemu_rvcore.debug_is_minstret))))
             {
                 printf("\033[1;31mError!\033[0m\n");
                 printf("reference: PC = 0x%016lx, wb_rf_wnum = 0x%02lx, wb_rf_wdata = 0x%016lx\n", cemu_rvcore.debug_pc, cemu_rvcore.debug_reg_num, cemu_rvcore.debug_reg_wdata);
@@ -182,18 +192,13 @@ void riscv_test_run(Vtop *top, nscscc_sram_ref &mmio_ref, const char *riscv_test
                 else if (delay-- == 0)
                     running = false;
             }
-            // ==========================
-            if (has_delayslot)
+            else
             {
-                if (delayslot_cnt > 0)
-                    delayslot_cnt--;
-                if (cemu_rvcore.debug_is_branch && delayslot_flag)
+                if (cemu_rvcore.debug_is_mcycle || cemu_rvcore.debug_is_minstret)
                 {
-                    delayslot_cnt = 2;
-                    delayslot_flag = false;
+                    cemu_rvcore.set_GPR(cemu_rvcore.debug_reg_num, top->debug_rf_wdata);
                 }
             }
-            // ==========================
         }
         if (trace_on)
         {
@@ -214,7 +219,7 @@ void riscv_test_run(Vtop *top, nscscc_sram_ref &mmio_ref, const char *riscv_test
     printf("total_ticks: %lu\n", ticks);
 }
 
-void make_cpu_trace(Vtop *top, nscscc_sram_ref &mmio_ref, const char *riscv_test_path)
+void make_cpu_trace(Vtop *top, axi4_ref<32, 64, 4> &mmio_ref, const char *riscv_test_path)
 {
 
     // setup cemu {
@@ -235,9 +240,9 @@ void make_cpu_trace(Vtop *top, nscscc_sram_ref &mmio_ref, const char *riscv_test
     // setup cemu }
 
     // setup rtl {
-    nscscc_sram mmio_sigs;
-    nscscc_sram_ref mmio_sigs_ref(mmio_sigs);
-    nscscc_sram_xbar mmio;
+    axi4<32, 64, 4> mmio_sigs;
+    axi4_ref<32, 64, 4> mmio_sigs_ref(mmio_sigs);
+    axi4_xbar<32, 64, 4> mmio;
 
     mmio_mem rtl_mem(128 * 1024 * 1024, riscv_test_path);
 
@@ -269,8 +274,6 @@ void make_cpu_trace(Vtop *top, nscscc_sram_ref &mmio_ref, const char *riscv_test
     uint64_t ticks = 0;
     uint64_t last_commit = ticks;
     int delay = 10;
-    int delayslot_cnt = 0;
-    bool delayslot_flag = true;
     while (!Verilated::gotFinish() && sim_time > 0 && running)
     {
         if (rst_ticks > 0)
@@ -292,24 +295,13 @@ void make_cpu_trace(Vtop *top, nscscc_sram_ref &mmio_ref, const char *riscv_test
         }
         if (((top->clock && !dual_issue) || dual_issue) && top->debug_commit)
         { // instr retire
-            if (has_delayslot)
-            {
-                if (!delayslot_cnt)
-                {
-                    cemu_rvcore.step(0, 0, 0, 0);
-                    delayslot_flag = true;
-                }
-            }
-            else
-            {
-                cemu_rvcore.step(0, 0, 0, 0);
-            }
+            cemu_rvcore.step(0, 0, 0, 0);
             last_commit = ticks;
             if ((top->debug_pc != cemu_rvcore.debug_pc ||
                  cemu_rvcore.debug_reg_num != 0 &&
                      (top->debug_rf_wnum != cemu_rvcore.debug_reg_num ||
                       top->debug_rf_wdata != cemu_rvcore.debug_reg_wdata)) &&
-                !delayslot_cnt)
+                running)
             {
                 printf("\033[1;31mError!\033[0m\n");
                 printf("reference: PC = 0x%016lx, wb_rf_wnum = 0x%02lx, wb_rf_wdata = 0x%016lx\n", cemu_rvcore.debug_pc, cemu_rvcore.debug_reg_num, cemu_rvcore.debug_reg_wdata);
@@ -325,18 +317,6 @@ void make_cpu_trace(Vtop *top, nscscc_sram_ref &mmio_ref, const char *riscv_test
                 else if (delay-- == 0)
                     running = false;
             }
-            // ==========================
-            if (has_delayslot)
-            {
-                if (delayslot_cnt > 0)
-                    delayslot_cnt--;
-                if (cemu_rvcore.debug_is_branch && delayslot_flag)
-                {
-                    delayslot_cnt = 2;
-                    delayslot_flag = false;
-                }
-            }
-            // ==========================
             fprintf(trace_file, "1 %016lx %02lx %016lx\n", cemu_rvcore.debug_pc, cemu_rvcore.debug_reg_num, cemu_rvcore.debug_reg_wdata);
         }
         if (trace_on)
@@ -424,13 +404,9 @@ int main(int argc, char **argv, char **env)
         {
             write_append = true;
         }
-        else if (strcmp(argv[i], "-hasdelayslot") == 0) // 是否有延迟槽
+        else if (strcmp(argv[i], "-dual_issue") == 0) // 追加写入
         {
-            has_delayslot = true;
-        }
-        else if (strcmp(argv[i], "-onlymodem") == 0) // 只有modeM
-        {
-            only_modeM = true;
+            dual_issue = true;
         }
         else
         {
@@ -442,12 +418,12 @@ int main(int argc, char **argv, char **env)
 
     // setup soc
     Vtop *top = new Vtop;
-    nscscc_sram_ptr mmio_ptr;
+    axi4_ptr<32, 64, 4> mmio_ptr;
 
     connect_wire(mmio_ptr, top);
     assert(mmio_ptr.check());
 
-    nscscc_sram_ref mmio_ref(mmio_ptr);
+    axi4_ref<32, 64, 4> mmio_ref(mmio_ptr);
 
     switch (run_mode)
     {

@@ -1,12 +1,12 @@
 # 🧬 RISCV-DIFFTEST
 
-对 SRAM 结构的 [RISCV-LAB](https://code.educoder.net/ppg69fuwb/riscv-lab) 提供差分测试支持
+对 AXI 结构的 [RISCV-LAB](https://code.educoder.net/ppg69fuwb/riscv-lab) 提供差分测试支持
 
 差分测试框架修改自 [soc-simulator](https://github.com/cyyself/soc-simulator)
 
 ## 📑 目录说明
 
-- `core` **存放待测试处理器的代码**，其顶层信号应与 `top_sram_wrapper` 中信号定义一致
+- `core` **存放待测试处理器的代码**，其顶层信号应与 `top_axi_wrapper` 中信号定义一致
 - `test` 存放测试代码
 - `src` 存放模拟器代码
 
@@ -32,3 +32,4 @@
     - `-delay` 行为不一致时将继续运行一段时间再停止
     - `-cpu_trace` 记录被测试的处理器的程序运行历史信息，生成 trace.txt
     - `-perf` 打印处理器运行的IPC数据
+    - `-dual_issue` 对双发射处理器进行测试
