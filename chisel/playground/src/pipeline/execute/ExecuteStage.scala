@@ -20,12 +20,17 @@ class ExecuteStage extends Module {
   val io = IO(new Bundle {
     val decodeUnit  = Input(new DecodeUnitExecuteUnit())
     val executeUnit = Output(new DecodeUnitExecuteUnit())
+    val ctrl        = Input(new CtrlSignal())
   })
 
   val data = RegInit(0.U.asTypeOf(new IdExeData()))
 
-  // 完成ExecuteStage模块的逻辑
-  when(true.B) {
+  when(io.ctrl.do_flush) {
+    data := 0.U.asTypeOf(data)
+  }.elsewhen(!io.ctrl.allow_to_go) {
+    data := 0.U.asTypeOf(data)
+    data.info := 0.U.asTypeOf(new Info())
+  }.otherwise {
     data := io.decodeUnit.data
   }
 

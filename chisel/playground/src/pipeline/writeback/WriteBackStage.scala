@@ -15,16 +15,19 @@ class MemWbData extends Bundle {
 class MemoryUnitWriteBackUnit extends Bundle {
   val data = new MemWbData()
 }
+
 class WriteBackStage extends Module {
   val io = IO(new Bundle {
     val memoryUnit    = Input(new MemoryUnitWriteBackUnit())
     val writeBackUnit = Output(new MemoryUnitWriteBackUnit())
+    val ctrl          = Input(new CtrlSignal())
   })
 
   val data = RegInit(0.U.asTypeOf(new MemWbData()))
   
-  // 完成WriteBackStage模块的逻辑
-  when(true.B) {
+  when(io.ctrl.do_flush) {
+    data := 0.U.asTypeOf(new MemWbData())
+  }.elsewhen(io.ctrl.allow_to_go) {
     data := io.memoryUnit.data
   }
 

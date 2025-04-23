@@ -21,12 +21,14 @@ class MemoryStage extends Module {
   val io = IO(new Bundle {
     val executeUnit = Input(new ExecuteUnitMemoryUnit())
     val memoryUnit  = Output(new ExecuteUnitMemoryUnit())
+    val ctrl        = Input(new CtrlSignal())
   })
 
   val data = RegInit(0.U.asTypeOf(new ExeMemData()))
 
-  // 完成MemoryStage模块的逻辑
-  when(true.B) {
+  when(io.ctrl.do_flush) {
+    data := 0.U.asTypeOf(new ExeMemData())
+  }.elsewhen(io.ctrl.allow_to_go) {
     data := io.executeUnit.data
   }
 

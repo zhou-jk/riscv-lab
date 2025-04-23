@@ -51,6 +51,7 @@ class Decoder extends Module with HasInstrType {
     InstrR -> true.B,
     InstrI -> true.B,
     InstrS -> true.B,
+    InstrU -> false.B,
     InstrB -> true.B,
     InstrJ -> false.B
   ))
@@ -59,6 +60,7 @@ class Decoder extends Module with HasInstrType {
     InstrR -> true.B,
     InstrI -> false.B,
     InstrS -> true.B,
+    InstrU -> false.B,
     InstrB -> true.B,
     InstrJ -> false.B
   ))

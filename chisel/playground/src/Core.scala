@@ -25,16 +25,24 @@ class Core extends Module {
   val memoryUnit     = Module(new MemoryUnit()).io
   val writeBackStage = Module(new WriteBackStage()).io
   val writeBackUnit  = Module(new WriteBackUnit()).io
+  val controlUnit    = Module(new ControlUnit()).io
+
+  // 控制单元
+  controlUnit.decodeUnitInfo    := decodeUnit.executeStage.data.info
+  controlUnit.executeUnitInfo   := executeUnit.memoryStage.data.info
+  controlUnit.memoryUnitInfo    := memoryUnit.writeBackStage.data.info
+  controlUnit.writeBackUnitInfo := writeBackUnit.writeBackStage.data.info
+  controlUnit.branch            := executeUnit.branch
 
   // 取指单元
   fetchUnit.instSram <> io.instSram
   fetchUnit.decodeStage <> decodeStage.fetchUnit
-  
   fetchUnit.branch := executeUnit.branch
   fetchUnit.target := executeUnit.target
+  fetchUnit.ctrl   := controlUnit.fetchUnitCtrl
 
-  // 完成Core模块的逻辑
   decodeStage.decodeUnit <> decodeUnit.decodeStage
+  decodeStage.ctrl := controlUnit.fetchUnitCtrl
 
   regfile.read.src1.raddr := decodeUnit.regfile.src1.raddr
   regfile.read.src2.raddr := decodeUnit.regfile.src2.raddr
@@ -43,18 +51,23 @@ class Core extends Module {
   decodeUnit.regfile.src2.rdata := regfile.read.src2.rdata
   decodeUnit.executeStage <> executeStage.decodeUnit
 
+  // 执行阶段
   executeStage.executeUnit <> executeUnit.executeStage
+  executeStage.ctrl := controlUnit.decodeUnitCtrl
   executeUnit.memoryStage  <> memoryStage.executeUnit
 
+  // 访存阶段
   memoryStage.memoryUnit <> memoryUnit.memoryStage
+  memoryStage.ctrl := controlUnit.executeUnitCtrl
 
   io.dataSram.rdata <> memoryUnit.rdata
-
   memoryUnit.writeBackStage <> writeBackStage.memoryUnit
 
   executeUnit.dataSram <> io.dataSram
 
+  // 写回阶段
   writeBackStage.writeBackUnit <> writeBackUnit.writeBackStage
+  writeBackStage.ctrl := controlUnit.writeBackUnitCtrl
 
   regfile.write.wen   := writeBackUnit.regfile.wen
   regfile.write.waddr := writeBackUnit.regfile.waddr
