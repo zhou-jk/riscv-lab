@@ -49,6 +49,40 @@ class Core extends Module {
 
   decodeUnit.regfile.src1.rdata := regfile.read.src1.rdata
   decodeUnit.regfile.src2.rdata := regfile.read.src2.rdata
+
+  // 连接前递数据
+  val exeForwardInfo = Wire(new ForwardInfo())
+  exeForwardInfo.reg_wen := executeUnit.memoryStage.data.info.reg_wen
+  exeForwardInfo.reg_waddr := executeUnit.memoryStage.data.info.reg_waddr
+  exeForwardInfo.fusel := executeUnit.memoryStage.data.info.fusel
+
+  val exeForwardData = Wire(new ForwardData())
+  exeForwardData.wdata := executeUnit.memoryStage.data.rd_info.wdata
+
+  val memForwardInfo = Wire(new ForwardInfo())
+  memForwardInfo.reg_wen := memoryUnit.writeBackStage.data.info.reg_wen
+  memForwardInfo.reg_waddr := memoryUnit.writeBackStage.data.info.reg_waddr
+  memForwardInfo.fusel := memoryUnit.writeBackStage.data.info.fusel
+
+  val memForwardData = Wire(new ForwardData())
+  memForwardData.wdata := memoryUnit.writeBackStage.data.rd_info.wdata
+
+  val wbForwardInfo = Wire(new ForwardInfo())
+  wbForwardInfo.reg_wen := writeBackUnit.writeBackStage.data.info.reg_wen
+  wbForwardInfo.reg_waddr := writeBackUnit.writeBackStage.data.info.reg_waddr
+  wbForwardInfo.fusel := writeBackUnit.writeBackStage.data.info.fusel
+
+  val wbForwardData = Wire(new ForwardData())
+  wbForwardData.wdata := writeBackUnit.writeBackStage.data.rd_info.wdata
+
+  decodeUnit.exeForwardInfo := exeForwardInfo
+  decodeUnit.memForwardInfo := memForwardInfo
+  decodeUnit.wbForwardInfo  := wbForwardInfo
+
+  decodeUnit.exeForwardData := exeForwardData
+  decodeUnit.memForwardData := memForwardData
+  decodeUnit.wbForwardData  := wbForwardData
+
   decodeUnit.executeStage <> executeStage.decodeUnit
 
   // 执行阶段

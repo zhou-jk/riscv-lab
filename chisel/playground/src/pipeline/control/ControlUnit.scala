@@ -25,19 +25,16 @@ class ControlUnit extends Module {
     val writeBackUnitCtrl = Output(new CtrlSignal())
   })
 
-  val exe_conflict = io.executeUnitInfo.reg_wen && io.executeUnitInfo.reg_waddr.orR && 
-                     ((io.decodeUnitInfo.src1_ren && (io.decodeUnitInfo.src1_raddr === io.executeUnitInfo.reg_waddr)) || 
-                     (io.decodeUnitInfo.src2_ren && (io.decodeUnitInfo.src2_raddr === io.executeUnitInfo.reg_waddr)))
+  val exe_is_load = io.executeUnitInfo.valid && 
+                    (io.executeUnitInfo.fusel === FuType.lsu) && 
+                    LSUOpType.isLoad(io.executeUnitInfo.op(3, 0))
+  
+  val exe_conflict = exe_is_load && io.executeUnitInfo.reg_wen && io.executeUnitInfo.reg_waddr.orR && 
+                    ((io.decodeUnitInfo.src1_ren && io.decodeUnitInfo.src1_raddr === io.executeUnitInfo.reg_waddr) || 
+                     (io.decodeUnitInfo.src2_ren && io.decodeUnitInfo.src2_raddr === io.executeUnitInfo.reg_waddr))
 
-  val mem_conflict = io.memoryUnitInfo.reg_wen && io.memoryUnitInfo.reg_waddr.orR && 
-                     ((io.decodeUnitInfo.src1_ren && (io.decodeUnitInfo.src1_raddr === io.memoryUnitInfo.reg_waddr)) || 
-                     (io.decodeUnitInfo.src2_ren && (io.decodeUnitInfo.src2_raddr === io.memoryUnitInfo.reg_waddr)))
-                     
-  val wb_conflict = io.writeBackUnitInfo.reg_wen && io.writeBackUnitInfo.reg_waddr.orR && 
-                    ((io.decodeUnitInfo.src1_ren && (io.decodeUnitInfo.src1_raddr === io.writeBackUnitInfo.reg_waddr)) || 
-                    (io.decodeUnitInfo.src2_ren && (io.decodeUnitInfo.src2_raddr === io.writeBackUnitInfo.reg_waddr)))
 
-  val data_conflict = exe_conflict || mem_conflict || wb_conflict
+  val data_conflict = exe_conflict
 
   io.fetchUnitCtrl.allow_to_go := !data_conflict
   io.fetchUnitCtrl.do_flush := io.branch
