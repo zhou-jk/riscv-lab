@@ -67,7 +67,7 @@ TRACE_TESTS67 := $(addprefix trace_,$(TEST67))
 $(TEST67): obj_dir/V$(TOP_NAME)
 	$(call git_commit, "test $@") # DO NOT REMOVE THIS LINE!!!
 	count=0; \
-	for test in ./test/bin/am-tests/*; do \
+	for test in $$(ls ./test/bin/am-tests/* | sort); do \
 		count=$$((count + 1)); \
 		echo "Running test $$count: $$test"; \
 		./obj_dir/V$(TOP_NAME) $$test -rvtest -pc; \
@@ -81,7 +81,7 @@ $(TRACE_TESTS67): obj_dir/V$(TOP_NAME)
 	$(call git_commit, "trace $*") # DO NOT REMOVE THIS LINE!!!
 	rm -rf ./trace.txt
 	count=0; \
-	for test in ./test/bin/am-tests/*; do \
+	for test in $$(ls ./test/bin/am-tests/* | sort); do \
 		count=$$((count + 1)); \
 		echo "Running test $$count: $$test"; \
 		./obj_dir/V$(TOP_NAME) $$test -rvtest -cpu_trace -writeappend; \
@@ -103,7 +103,7 @@ trace_lab8: obj_dir/V$(TOP_NAME)
 lab9: obj_dir/V$(TOP_NAME)
 	$(call git_commit, "test lab9") # DO NOT REMOVE THIS LINE!!!
 	count=0; \
-	for test in $$(find ./test/bin/riscv-test/ \( -name "*rv64ui-p-*" -o -name "*rv64um-p-*" -o -name "*rv64mi-p-*" \) | grep -vE "*rv64ui-p-fence_i|*rv64mi-p-access"); do \
+	for test in $$(find ./test/bin/riscv-test/ \( -name "*rv64ui-p-*" -o -name "*rv64um-p-*" -o -name "*rv64mi-p-*" \) | sort | grep -vE "*rv64ui-p-fence_i|*rv64mi-p-access"); do \
 		count=$$((count + 1)); \
 		echo "Running test $$count: $$test"; \
 		./obj_dir/V$(TOP_NAME) $$test -rvtest -pc; \
@@ -113,7 +113,7 @@ lab9: obj_dir/V$(TOP_NAME)
 trace_lab9: obj_dir/V$(TOP_NAME)
 	$(call git_commit, "trace lab9") # DO NOT REMOVE THIS LINE!!!
 	count=0; \
-	for test in $$(find ./test/bin/riscv-test/ \( -name "*rv64ui-p-*" -o -name "*rv64um-p-*" -o -name "*rv64mi-p-*" \) | grep -vE "*rv64ui-p-fence_i|*rv64mi-p-access"); do \
+	for test in $$(find ./test/bin/riscv-test/ \( -name "*rv64ui-p-*" -o -name "*rv64um-p-*" -o -name "*rv64mi-p-*" \) | sort | grep -vE "*rv64ui-p-fence_i|*rv64mi-p-access"); do \
 		count=$$((count + 1)); \
 		echo "Running test $$count: $$test"; \
 		./obj_dir/V$(TOP_NAME) $$test -rvtest -cpu_trace -writeappend; \
