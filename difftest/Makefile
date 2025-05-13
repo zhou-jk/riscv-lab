@@ -28,7 +28,7 @@ clean:
 perf: obj_dir/V$(TOP_NAME)
 	$(call git_commit, "perf test RTL") # DO NOT REMOVE THIS LINE!!!
 	count=0; \
-	for test in ./test/bin/riscv-test/benchmarks/*; do \
+	for test in $$(ls ./test/bin/riscv-test/benchmarks/* | sort); do \
 		count=$$((count + 1)); \
 		echo "Running test $$count: $$test"; \
 		./obj_dir/V$(TOP_NAME) $$test -rvtest -pc -perf; \
@@ -40,7 +40,7 @@ TRACE_TESTS67 := $(addprefix trace_,$(TEST67))
 $(TEST67): obj_dir/V$(TOP_NAME)
 	$(call git_commit, "test $@") # DO NOT REMOVE THIS LINE!!!
 	count=0; \
-	for test in ./test/bin/am-tests/*; do \
+	for test in $$(ls ./test/bin/am-tests/* | sort); do \
 		count=$$((count + 1)); \
 		echo "Running test $$count: $$test"; \
 		./obj_dir/V$(TOP_NAME) $$test -rvtest -pc; \
@@ -54,7 +54,7 @@ $(TRACE_TESTS67): obj_dir/V$(TOP_NAME)
 	$(call git_commit, "trace $*") # DO NOT REMOVE THIS LINE!!!
 	rm -rf ./trace.txt
 	count=0; \
-	for test in ./test/bin/am-tests/*; do \
+	for test in $$(ls ./test/bin/am-tests/* | sort); do \
 		count=$$((count + 1)); \
 		echo "Running test $$count: $$test"; \
 		./obj_dir/V$(TOP_NAME) $$test -rvtest -cpu_trace -writeappend; \
@@ -65,18 +65,22 @@ $(TRACE_TESTS67): obj_dir/V$(TOP_NAME)
 	echo "Total tests run: $$count";
 
 qbench: obj_dir/V$(TOP_NAME)
-	echo "====================quick benchmarks====================="
-	count=0; \
-	for test in $$(find ./test/bin/riscv-test/benchmarks \( -name "*.bin" \) | grep -vE "*dhrystone*|*mt-vvadd*"); do \
+	@echo "==================================================================="
+	@echo "=========================quick benchmarks=========================="
+	@echo "==================================================================="
+	@count=0; \
+	for test in $$(find ./test/bin/riscv-test/benchmarks \( -name "*.bin" \) | sort | grep -vE "*dhrystone*|*mt-vvadd*"); do \
 		count=$$((count + 1)); \
 		echo "Running bench $$count: $$test"; \
 		./obj_dir/V$(TOP_NAME) $$test -rvtest -pc -perf; \
 	done; \
 
 sbench: obj_dir/V$(TOP_NAME)
-	echo "====================quick superscalar benchmarks====================="
-	count=0; \
-	for test in $$(find ./test/bin/riscv-test/benchmarks \( -name "*.bin" \) | grep -vE "*dhrystone*|*mt-vvadd*"); do \
+	@echo "====================================================================="
+	@echo "====================quick superscalar benchmarks====================="
+	@echo "====================================================================="
+	@count=0; \
+	for test in $$(find ./test/bin/riscv-test/benchmarks \( -name "*.bin" \) | sort | grep -vE "*dhrystone*|*mt-vvadd*"); do \
 		count=$$((count + 1)); \
 		echo "Running bench $$count: $$test"; \
 		./obj_dir/V$(TOP_NAME) $$test -rvtest -pc -perf -dual_issue; \
@@ -88,7 +92,7 @@ TRACE_TEST9_10 := $(addprefix trace_,$(TEST9_10))
 $(TEST9_10): obj_dir/V$(TOP_NAME)
 	$(call git_commit, "test $@") # DO NOT REMOVE THIS LINE!!!
 	count=0; \
-	for test in $$(find ./test/bin/riscv-test/ \( -name "*rv64ui-p-*" -o -name "*rv64um-p-*" -o -name "*rv64mi-p-*" \) | grep -vE "*rv64ui-p-fence_i|*rv64mi-p-access"); do \
+	for test in $$(find ./test/bin/riscv-test/ \( -name "*rv64ui-p-*" -o -name "*rv64um-p-*" -o -name "*rv64mi-p-*" \) | sort | grep -vE "*rv64ui-p-fence_i|*rv64mi-p-access"); do \
 		count=$$((count + 1)); \
 		echo "Running test $$count: $$test"; \
 		./obj_dir/V$(TOP_NAME) $$test -rvtest -pc; \
@@ -100,7 +104,7 @@ $(TRACE_TEST9_10): obj_dir/V$(TOP_NAME)
 	$(call git_commit, "trace $*") # DO NOT REMOVE THIS LINE!!!
 	rm -rf ./trace.txt
 	count=0; \
-	for test in $$(find ./test/bin/riscv-test/ \( -name "*rv64ui-p-*" -o -name "*rv64um-p-*" -o -name "*rv64mi-p-*" \) | grep -vE "*rv64ui-p-fence_i|*rv64mi-p-access"); do \
+	for test in $$(find ./test/bin/riscv-test/ \( -name "*rv64ui-p-*" -o -name "*rv64um-p-*" -o -name "*rv64mi-p-*" \) | sort | grep -vE "*rv64ui-p-fence_i|*rv64mi-p-access"); do \
 		count=$$((count + 1)); \
 		echo "Running test $$count: $$test"; \
 		./obj_dir/V$(TOP_NAME) $$test -rvtest -cpu_trace -writeappend; \
@@ -113,7 +117,7 @@ TRACE_TEST11_13 := $(addprefix trace_,$(TEST11_13))
 $(TEST11_13): obj_dir/V$(TOP_NAME)
 	$(call git_commit, "test $@") # DO NOT REMOVE THIS LINE!!!
 	count=0; \
-	for test in $$(find ./test/bin/riscv-test/ \( -name "*rv64ui-p-*" -o -name "*rv64um-p-*" -o -name "*rv64mi-p-*" \) | grep -vE "*rv64mi-p-access"); do \
+	for test in $$(find ./test/bin/riscv-test/ \( -name "*rv64ui-p-*" -o -name "*rv64um-p-*" -o -name "*rv64mi-p-*" \) | sort | grep -vE "*rv64mi-p-access"); do \
 		count=$$((count + 1)); \
 		echo "Running test $$count: $$test"; \
 		if [ "$@" = "lab13" ]; then \
@@ -133,7 +137,7 @@ $(TRACE_TEST11_13): obj_dir/V$(TOP_NAME)
 	$(call git_commit, "trace $*") # DO NOT REMOVE THIS LINE!!!
 	rm -rf ./trace.txt
 	count=0; \
-	for test in $$(find ./test/bin/riscv-test/ \( -name "*rv64ui-p-*" -o -name "*rv64um-p-*" -o -name "*rv64mi-p-*" \) | grep -vE "*rv64mi-p-access"); do \
+	for test in $$(find ./test/bin/riscv-test/ \( -name "*rv64ui-p-*" -o -name "*rv64um-p-*" -o -name "*rv64mi-p-*" \) | sort | grep -vE "*rv64mi-p-access"); do \
 		count=$$((count + 1)); \
 		echo "Running test $$count: $$test"; \
 		if [ "$@" = "trace_lab13" ]; then \
