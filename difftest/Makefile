@@ -23,7 +23,7 @@ test:
 
 clean:
 	rm -rf obj_dir
-	rm -rf core/Puacpu.v
+	rm -rf core/PuaCpu.v
 
 perf: obj_dir/V$(TOP_NAME)
 	$(call git_commit, "perf test RTL") # DO NOT REMOVE THIS LINE!!!
@@ -31,6 +31,17 @@ perf: obj_dir/V$(TOP_NAME)
 	for test in ./test/bin/riscv-test/benchmarks/*; do \
 		count=$$((count + 1)); \
 		echo "Running test $$count: $$test"; \
+		./obj_dir/V$(TOP_NAME) $$test -rvtest -pc -perf; \
+	done; \
+
+qbench: obj_dir/V$(TOP_NAME)
+	@echo "==================================================================="
+	@echo "=========================quick benchmarks=========================="
+	@echo "==================================================================="
+	@count=0; \
+	for test in $$(find ./test/bin/riscv-test/benchmarks \( -name "*.bin" \) | sort | grep -vE "*dhrystone*|*mt-vvadd*"); do \
+		count=$$((count + 1)); \
+		echo "Running bench $$count: $$test"; \
 		./obj_dir/V$(TOP_NAME) $$test -rvtest -pc -perf; \
 	done; \
 
@@ -109,6 +120,7 @@ lab9: obj_dir/V$(TOP_NAME)
 		./obj_dir/V$(TOP_NAME) $$test -rvtest -pc; \
 	done; \
 	echo "Total tests run: $$count";
+	$(MAKE) qbench
 
 trace_lab9: obj_dir/V$(TOP_NAME)
 	$(call git_commit, "trace lab9") # DO NOT REMOVE THIS LINE!!!
