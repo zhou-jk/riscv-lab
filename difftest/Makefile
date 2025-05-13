@@ -23,7 +23,7 @@ test:
 
 clean:
 	rm -rf obj_dir
-	rm -rf core/Puacpu.v
+	rm -rf core/PuaCpu.v
 
 perf: obj_dir/V$(TOP_NAME)
 	$(call git_commit, "perf test RTL") # DO NOT REMOVE THIS LINE!!!
