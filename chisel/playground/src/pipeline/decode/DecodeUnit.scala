@@ -5,7 +5,7 @@ import chisel3.util._
 import cpu.defines._
 import cpu.defines.Const._
 
-class DecodeUnit extends Module {
+class DecodeUnit extends Module with HasExceptionNO {
   val io = IO(new Bundle {
     // 输入
     val decodeStage = Flipped(new FetchUnitDecodeUnit())
@@ -22,6 +22,10 @@ class DecodeUnit extends Module {
     
     // 输出
     val executeStage = Output(new DecodeUnitExecuteUnit())
+    
+    // CSR相关信号
+    val mode = Input(UInt(2.W))  // 当前特权模式
+    val interrupt = Input(Vec(INT_WID, Bool())) // 中断信号
   })
 
   // 译码阶段完成指令的译码操作以及源操作数的准备
@@ -68,8 +72,57 @@ class DecodeUnit extends Module {
   val final_src1_data = Mux(info.src1_ren, forwardCtrl.final_src1_data, src1_non_reg)
   val final_src2_data = Mux(info.src2_ren, forwardCtrl.final_src2_data, info.imm)
 
+  // 异常检测
+  val ex = Wire(new ExceptionInfo())
+  ex.exception := VecInit(Seq.fill(EXC_WID)(false.B))
+  ex.interrupt := VecInit(Seq.fill(INT_WID)(false.B))
+  ex.tval := VecInit(Seq.fill(EXC_WID)(0.U(XLEN.W)))
+  
+  // 检测PC地址未对齐异常
+  when(pc(1, 0) =/= 0.U) {
+    ex.exception(instAddrMisaligned) := true.B
+    ex.tval(instAddrMisaligned) := pc
+  }
+  
+  // 非法指令异常
+  val inst_illegal = !decoder.out.legal
+  when(inst_illegal) {
+    ex.exception(illegalInst) := true.B
+    ex.tval(illegalInst) := io.decodeStage.data.inst
+  }
+  
+  // 断点异常
+  when(info.valid && info.fusel === FuType.csr && info.op(3, 0) === CSROpType.ebreak) {
+    ex.exception(breakPoint) := true.B
+  }
+  
+  // ECALL指令异常
+  when(info.valid && info.fusel === FuType.csr && info.op(3, 0) === CSROpType.ecall) {
+    when(io.mode === Priv.u) {
+      ex.exception(ecallU) := true.B
+    }.elsewhen(io.mode === Priv.m) {
+      ex.exception(ecallM) := true.B
+    }
+  }
+  
+  // 中断
+  ex.interrupt := io.interrupt
+
+  // ADD PRINTF STATEMENTS HERE
+  when(pc === "h800000dc".U(XLEN.W)) {
+    val inst_in_decode_unit = io.decodeStage.data.inst
+    val rd_extracted_in_decode_unit = inst_in_decode_unit(11,7)
+    printf(p"DecodeUnit: pc=0x${Hexadecimal(pc)}, inst=0x${Hexadecimal(inst_in_decode_unit)}\n")
+    printf(p"            decoder.out.legal=${decoder.out.legal}, inst_illegal=${inst_illegal}\n")
+    printf(p"            ex.exception(illegalInst)=${ex.exception(illegalInst)}\n")
+    printf(p"            info.valid=${info.valid}, info.reg_wen=${info.reg_wen}\n")
+    printf(p"            info.fusel=${info.fusel}, info.op=${info.op}, info.reg_waddr=0x${Hexadecimal(info.reg_waddr)}\n")
+    printf(p"            DEBUG_DU: rd_extracted_in_decode_unit = ${rd_extracted_in_decode_unit}\n")
+  }
+
   io.executeStage.data.pc                 := pc
   io.executeStage.data.info               := info
   io.executeStage.data.src_info.src1_data := final_src1_data
   io.executeStage.data.src_info.src2_data := final_src2_data
+  io.executeStage.data.ex                 := ex
 }

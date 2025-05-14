@@ -14,6 +14,7 @@ class Decoder extends Module with HasInstrType {
     // outputs
     val out = Output(new Bundle {
       val info = new Info()
+      val legal = Bool()
     })
   })
 
@@ -78,5 +79,22 @@ class Decoder extends Module with HasInstrType {
   io.out.info.imm        := final_imm
   io.out.info.src1_ren   := src1_ren
   io.out.info.src2_ren   := src2_ren
-  io.out.info.inst       := inst
+  io.out.info.inst       := inst // Use captured input inst
+  
+  // 用于表示指令是否合法
+  when(inst === "h18005073".U(XLEN.W)) { // Compare with inst (XLEN wide for this outer printf)
+    printf(p"Decoder: inst=0x${Hexadecimal(inst)}, local_inst_for_lookup=0x${Hexadecimal(inst)}\n")
+    printf(p"         instrType=${instrType}, fuType=${fuType}, fuOpType=${fuOpType}\n")
+    printf(p"         is_valid_instr_type=${is_valid_instr_type}, rs1_direct=${rs_direct}, rt_direct=${rt_direct}, rd_direct=${rd_direct}\n") // Print direct extracts
+    
+    val extracted_rd = inst(11, 7).asUInt // Explicit type
+    val extracted_rs1 = inst(19, 15).asUInt
+    val extracted_csr_addr_from_imm_field_for_i_type = inst(31, 20).asUInt // This is CSR addr for I-type CSRs
+
+    printf(p"    Raw field extractions: rd_val_from_extract=${extracted_rd}, rs1_val_from_extract=${extracted_rs1}, csr_addr_from_extract=${extracted_csr_addr_from_imm_field_for_i_type}\n")
+    printf(p"    Concatenated check: ${Cat(extracted_csr_addr_from_imm_field_for_i_type, extracted_rs1, extracted_rd)}\n") // Just to see if they combine
+
+    printf(p"         io.out.info.reg_waddr=0x${Hexadecimal(io.out.info.reg_waddr)}, io.out.info.reg_wen=${io.out.info.reg_wen}, io.out.info.valid=${io.out.info.valid}, out.legal=${is_valid_instr_type}\n")
+  }
+  io.out.legal := is_valid_instr_type
 }

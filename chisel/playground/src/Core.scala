@@ -49,6 +49,10 @@ class Core extends Module {
 
   decodeUnit.regfile.src1.rdata := regfile.read.src1.rdata
   decodeUnit.regfile.src2.rdata := regfile.read.src2.rdata
+  
+  // 连接CSR相关信号
+  decodeUnit.mode := executeUnit.mode
+  decodeUnit.interrupt := executeUnit.interrupt_out
 
   // 连接前递数据
   val exeForwardInfo = Wire(new ForwardInfo())
@@ -89,6 +93,9 @@ class Core extends Module {
   executeStage.executeUnit <> executeUnit.executeStage
   executeStage.ctrl := controlUnit.decodeUnitCtrl
   executeUnit.memoryStage  <> memoryStage.executeUnit
+  
+  // 连接中断信号
+  executeUnit.interrupt := io.interrupt
 
   // 访存阶段
   memoryStage.memoryUnit <> memoryUnit.memoryStage
