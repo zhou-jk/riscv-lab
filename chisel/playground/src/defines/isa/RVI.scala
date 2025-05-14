@@ -108,5 +108,6 @@ object RVIInstr extends CoreParameter {
     (if (XLEN == 64) RV64IInstr.table else Array.empty) ++
     (if (cpuConfig.hasMExtension) RV64MInstr.table else Array.empty) ++
     RVMemInstr.table ++
-    RVBranchInstr.table
+    RVBranchInstr.table ++
+    (if (cpuConfig.hasZicsrExtension) RVCSRInstr.table else Array.empty)
 }

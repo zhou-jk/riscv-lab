@@ -1,3 +1,4 @@
+// src/pipeline/execute/Fu.scala 修改Fu模块
 package cpu.pipeline
 
 import chisel3._
@@ -25,6 +26,7 @@ class Fu extends Module {
   val mdu = Module(new Mdu()).io
   val lsu = Module(new Lsu()).io
   val bru = Module(new Bru()).io
+  val csr = Module(new Csr()).io
 
   io.dataSram <> lsu.dataSram
 
@@ -34,10 +36,12 @@ class Fu extends Module {
   mdu.src_info := io.data.src_info
   lsu.info     := io.data.info
   lsu.src_info := io.data.src_info
-  
   bru.info     := io.data.info
   bru.src_info := io.data.src_info
   bru.pc       := io.data.pc
+  csr.info     := io.data.info
+  csr.src_info := io.data.src_info
+  
   io.branch    := bru.branch
   io.target    := bru.target
 
@@ -45,4 +49,5 @@ class Fu extends Module {
   io.data.rd_info.wdata(FuType.mdu) := mdu.result
   io.data.rd_info.wdata(FuType.lsu) := lsu.result
   io.data.rd_info.wdata(FuType.bru) := bru.result
+  io.data.rd_info.wdata(FuType.csr) := csr.result
 }
