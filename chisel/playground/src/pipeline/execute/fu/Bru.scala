@@ -5,14 +5,16 @@ import chisel3.util._
 import cpu.defines._
 import cpu.defines.Const._
 
-class Bru extends Module {
+class Bru extends Module with HasExceptionNO {
   val io = IO(new Bundle {
     val info     = Input(new Info())
     val src_info = Input(new SrcInfo())
     val pc       = Input(UInt(XLEN.W))
+    val ex       = Input(new ExceptionInfo())
     val result   = Output(UInt(XLEN.W))
     val branch   = Output(Bool())
     val target   = Output(UInt(XLEN.W))
+    val ex_out   = Output(new ExceptionInfo())
   })
 
   val op = io.info.op(3, 0)
@@ -50,7 +52,15 @@ class Bru extends Module {
   
   val result_out = pc + 4.U
 
+  val ex_out = Wire(new ExceptionInfo())
+  ex_out := io.ex
+  when(io.info.valid && branch_out && target_out(1, 0) =/= 0.U) {
+    ex_out.exception(instAddrMisaligned) := true.B
+    ex_out.tval(instAddrMisaligned) := target_out
+  }
+
   io.result := result_out
   io.branch := io.info.valid && (io.info.fusel === FuType.bru) && branch_out
   io.target := target_out
+  io.ex_out := ex_out
 }

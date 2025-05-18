@@ -15,13 +15,13 @@ class WriteBackUnit extends Module {
 
   // 写回阶段完成数据的写回操作
   // 同时该阶段还负责差分测试的比对工作
-  // 完成WriteBackUnit模块的逻辑
   val wb_data = io.writeBackStage.data
   val wb_pc   = wb_data.pc
   val wb_info = wb_data.info
   val wb_rd_info = wb_data.rd_info
 
-  val final_reg_wen = wb_info.valid && wb_info.reg_wen
+  val has_exception = wb_data.has_exception
+  val final_reg_wen = wb_info.valid && wb_info.reg_wen & !has_exception
 
   val wdata_selected = wb_rd_info.wdata(wb_info.fusel)
 

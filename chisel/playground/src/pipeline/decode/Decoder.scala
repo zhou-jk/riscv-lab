@@ -14,6 +14,7 @@ class Decoder extends Module with HasInstrType {
     // outputs
     val out = Output(new Bundle {
       val info = new Info()
+      val legal = Bool()
     })
   })
 
@@ -79,4 +80,5 @@ class Decoder extends Module with HasInstrType {
   io.out.info.src1_ren   := src1_ren
   io.out.info.src2_ren   := src2_ren
   io.out.info.inst       := inst
+  io.out.legal           := is_valid_instr_type
 }

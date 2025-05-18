@@ -7,9 +7,10 @@ import cpu.defines.Const._
 import cpu.CpuConfig
 
 class MemWbData extends Bundle {
-  val pc      = UInt(XLEN.W)
-  val info    = new Info()
-  val rd_info = new RdInfo()
+  val pc            = UInt(XLEN.W)
+  val info          = new Info()
+  val rd_info       = new RdInfo()
+  val has_exception = Bool()
 }
 
 class MemoryUnitWriteBackUnit extends Bundle {

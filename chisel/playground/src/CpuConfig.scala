@@ -12,5 +12,5 @@ case class CpuConfig(
   val hasAExtension:        Boolean = false, // 是否实现A扩展，即原子指令
   // 特权模式
   val hasSMode: Boolean = false, // 是否有S模式
-  val hasUMode: Boolean = false // 是否有U模式
+  val hasUMode: Boolean = true // 是否有U模式
 )

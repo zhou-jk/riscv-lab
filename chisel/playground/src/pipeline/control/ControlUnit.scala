@@ -16,7 +16,7 @@ class ControlUnit extends Module {
     val executeUnitInfo = Input(new Info())
     val memoryUnitInfo = Input(new Info())
     val writeBackUnitInfo = Input(new Info())
-    val branch = Input(Bool())
+    val flush = Input(Bool())
     
     val fetchUnitCtrl = Output(new CtrlSignal())
     val decodeUnitCtrl = Output(new CtrlSignal())
@@ -37,10 +37,10 @@ class ControlUnit extends Module {
   val data_conflict = exe_conflict
 
   io.fetchUnitCtrl.allow_to_go := !data_conflict
-  io.fetchUnitCtrl.do_flush := io.branch
+  io.fetchUnitCtrl.do_flush := io.flush
 
   io.decodeUnitCtrl.allow_to_go := !data_conflict
-  io.decodeUnitCtrl.do_flush := io.branch
+  io.decodeUnitCtrl.do_flush := io.flush
 
   io.executeUnitCtrl.allow_to_go := true.B
   io.executeUnitCtrl.do_flush := false.B

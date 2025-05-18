@@ -7,10 +7,11 @@ import cpu.defines.Const._
 import cpu.CpuConfig
 
 class ExeMemData extends Bundle {
-  val pc       = UInt(XLEN.W)
-  val info     = new Info()
-  val rd_info  = new RdInfo()
-  val src_info = new SrcInfo()
+  val pc             = UInt(XLEN.W)
+  val info           = new Info()
+  val rd_info        = new RdInfo()
+  val src_info       = new SrcInfo()
+  val has_exception  = Bool()
 }
 
 class ExecuteUnitMemoryUnit extends Bundle {

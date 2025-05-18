@@ -6,12 +6,12 @@ import cpu.defines.Const._
 import cpu.CpuConfig
 import cpu.defines._
 
-class FetchUnit extends Module {
+class FetchUnit extends Module with HasExceptionNO {
   val io = IO(new Bundle {
     val decodeStage = new FetchUnitDecodeUnit()
     val instSram    = new InstSram()
-    
-    val branch      = Input(Bool())
+        
+    val flush       = Input(Bool())
     val target      = Input(UInt(XLEN.W))
     val ctrl        = Input(new CtrlSignal())
   })
@@ -31,13 +31,15 @@ class FetchUnit extends Module {
 
   val pc = RegEnable(io.instSram.addr, (PC_INIT - 4.U), state =/= boot)
 
-  io.instSram.addr := Mux(io.branch, io.target, Mux(io.ctrl.allow_to_go, pc + 4.U, pc))
+  val pc_next = Mux(io.flush, io.target, Mux(io.ctrl.allow_to_go, pc + 4.U, pc))  
+  val pc_misaligned = pc_next(1, 0) =/= 0.U
+  io.instSram.addr := pc_next
 
   io.decodeStage.data.valid := state === receive && !io.ctrl.do_flush
   io.decodeStage.data.pc    := pc
-  io.decodeStage.data.inst  := io.instSram.rdata
+  io.decodeStage.data.inst := Mux(pc_misaligned, Instructions.NOP, io.instSram.rdata)
 
-  io.instSram.en    := !reset.asBool
+  io.instSram.en    := !reset.asBool && !pc_misaligned
   io.instSram.wen   := 0.U
   io.instSram.wdata := 0.U
 }

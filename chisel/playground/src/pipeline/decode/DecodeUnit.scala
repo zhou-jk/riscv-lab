@@ -5,7 +5,7 @@ import chisel3.util._
 import cpu.defines._
 import cpu.defines.Const._
 
-class DecodeUnit extends Module {
+class DecodeUnit extends Module with HasExceptionNO {
   val io = IO(new Bundle {
     // 输入
     val decodeStage = Flipped(new FetchUnitDecodeUnit())
@@ -22,6 +22,9 @@ class DecodeUnit extends Module {
     
     // 输出
     val executeStage = Output(new DecodeUnitExecuteUnit())
+    
+    val mode = Input(UInt(2.W))
+    val interrupt = Input(Vec(INT_WID, Bool()))
   })
 
   // 译码阶段完成指令的译码操作以及源操作数的准备
@@ -68,8 +71,40 @@ class DecodeUnit extends Module {
   val final_src1_data = Mux(info.src1_ren, forwardCtrl.final_src1_data, src1_non_reg)
   val final_src2_data = Mux(info.src2_ren, forwardCtrl.final_src2_data, info.imm)
 
+  val ex = Wire(new ExceptionInfo())
+  ex.exception := VecInit(Seq.fill(EXC_WID)(false.B))
+  ex.interrupt := VecInit(Seq.fill(INT_WID)(false.B))
+  ex.tval := VecInit(Seq.fill(EXC_WID)(0.U(XLEN.W)))
+  
+  when(pc(1, 0) =/= 0.U) {
+    ex.exception(instAddrMisaligned) := true.B
+    ex.tval(instAddrMisaligned) := pc
+  }
+  
+  val inst_illegal = !decoder.out.legal
+  when(inst_illegal) {
+    ex.exception(illegalInst) := true.B
+    ex.tval(illegalInst) := io.decodeStage.data.inst
+  }
+  
+  when(info.valid && info.fusel === FuType.csr && info.op(3, 0) === CSROpType.ebreak) {
+    ex.exception(breakPoint) := true.B
+  }
+  
+  when(info.valid && info.fusel === FuType.csr && info.op(3, 0) === CSROpType.ecall) {
+    when(io.mode === Priv.u) {
+      ex.exception(ecallU) := true.B
+    }.elsewhen(io.mode === Priv.m) {
+      ex.exception(ecallM) := true.B
+    }
+  }
+  
+  ex.interrupt := io.interrupt
+
+
   io.executeStage.data.pc                 := pc
   io.executeStage.data.info               := info
   io.executeStage.data.src_info.src1_data := final_src1_data
   io.executeStage.data.src_info.src2_data := final_src2_data
+  io.executeStage.data.ex                 := ex
 }

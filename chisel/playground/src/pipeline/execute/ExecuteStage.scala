@@ -10,6 +10,7 @@ class IdExeData extends Bundle {
   val pc       = UInt(XLEN.W)
   val info     = new Info()
   val src_info = new SrcInfo()
+  val ex       = new ExceptionInfo()
 }
 
 class DecodeUnitExecuteUnit extends Bundle {
@@ -29,7 +30,6 @@ class ExecuteStage extends Module {
     data := 0.U.asTypeOf(data)
   }.elsewhen(!io.ctrl.allow_to_go) {
     data := 0.U.asTypeOf(data)
-    data.info := 0.U.asTypeOf(new Info())
   }.otherwise {
     data := io.decodeUnit.data
   }

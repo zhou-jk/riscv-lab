@@ -23,8 +23,8 @@ class MemoryUnit extends Module {
 
   io.writeBackStage.data.pc := io.memoryStage.data.pc
   io.writeBackStage.data.info := io.memoryStage.data.info
-
   io.writeBackStage.data.rd_info := io.memoryStage.data.rd_info
+  io.writeBackStage.data.has_exception := io.memoryStage.data.has_exception
 
   io.writeBackStage.data.rd_info.wdata(FuType.lsu) := lsu_mem.result
 }
