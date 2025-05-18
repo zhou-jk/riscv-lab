@@ -10,6 +10,7 @@ class IdExeData extends Bundle {
   val pc       = UInt(XLEN.W)
   val info     = new Info()
   val src_info = new SrcInfo()
+  val ex       = new ExceptionInfo()
 }
 
 class DecodeUnitExecuteUnit extends Bundle {
@@ -20,9 +21,18 @@ class ExecuteStage extends Module {
   val io = IO(new Bundle {
     val decodeUnit  = Input(new DecodeUnitExecuteUnit())
     val executeUnit = Output(new DecodeUnitExecuteUnit())
+    val ctrl        = Input(new CtrlSignal())
   })
 
   val data = RegInit(0.U.asTypeOf(new IdExeData()))
 
-  // TODO: 完成ExecuteStage模块的逻辑
+  when(io.ctrl.do_flush) {
+    data := 0.U.asTypeOf(data)
+  }.elsewhen(!io.ctrl.allow_to_go) {
+    data := 0.U.asTypeOf(data)
+  }.otherwise {
+    data := io.decodeUnit.data
+  }
+
+  io.executeUnit.data := data
 }

@@ -4,6 +4,18 @@ import chisel3._
 import chisel3.util._
 
 object RV32I_ALUInstr extends HasInstrType with CoreParameter {
+  val LUI_OPCODE   = "b0110111".U(7.W) // LUI opcode
+  val AUIPC_OPCODE = "b0010111".U(7.W) // AUIPC opcode
+  val JAL_OPCODE   = "b1101111".U(7.W) // JAL opcode
+  val JALR_OPCODE  = "b1100111".U(7.W) // JALR opcode
+  val BRANCH_OPCODE= "b1100011".U(7.W) // Branch (B-type) opcode
+  val LOAD_OPCODE  = "b0000011".U(7.W) // Load (I-type) opcode
+  val STORE_OPCODE = "b0100011".U(7.W) // Store (S-type) opcode
+  val R_OPCODE     = "b0110011".U(7.W) // R-type opcode
+  val I_OPCODE     = "b0010011".U(7.W) // I-type (ALU immediate) opcode
+  val RW_OPCODE    = "b0111011".U(7.W) // R-type Word opcode (RV64)
+  val IW_OPCODE    = "b0011011".U(7.W) // I-type Word opcode (RV64)
+
   def ADDI = BitPat("b????????????_?????_000_?????_0010011")
   def SLLI = if (XLEN == 32) BitPat("b0000000?????_?????_001_?????_0010011")
   else BitPat("b000000??????_?????_001_?????_0010011")
@@ -34,8 +46,33 @@ object RV32I_ALUInstr extends HasInstrType with CoreParameter {
   // 在Decoder模块中搭配ListLookup函数使用
   val table = Array(
     // ADD指令将被解析为InstrR类型的指令，功能单元类型为alu，功能单元操作类型为add
-    ADD -> List(InstrR, FuType.alu, ALUOpType.add)
-    // TODO: 完成其他指令的解析
+    // R型指令
+    ADD  -> List(InstrR, FuType.alu, ALUOpType.add),
+    SUB  -> List(InstrR, FuType.alu, ALUOpType.sub),
+    SLL  -> List(InstrR, FuType.alu, ALUOpType.sll),
+    SLT  -> List(InstrR, FuType.alu, ALUOpType.slt),
+    SLTU -> List(InstrR, FuType.alu, ALUOpType.sltu),
+    XOR  -> List(InstrR, FuType.alu, ALUOpType.xor),
+    SRL  -> List(InstrR, FuType.alu, ALUOpType.srl),
+    SRA  -> List(InstrR, FuType.alu, ALUOpType.sra),
+    OR   -> List(InstrR, FuType.alu, ALUOpType.or),
+    AND  -> List(InstrR, FuType.alu, ALUOpType.and),
+
+    // I型指令
+    ADDI  -> List(InstrI, FuType.alu, ALUOpType.add),
+    SLLI  -> List(InstrI, FuType.alu, ALUOpType.sll),
+    SLTI  -> List(InstrI, FuType.alu, ALUOpType.slt),
+    SLTIU -> List(InstrI, FuType.alu, ALUOpType.sltu),
+    XORI  -> List(InstrI, FuType.alu, ALUOpType.xor),
+    SRLI  -> List(InstrI, FuType.alu, ALUOpType.srl),
+    SRAI  -> List(InstrI, FuType.alu, ALUOpType.sra),
+    ORI   -> List(InstrI, FuType.alu, ALUOpType.or),
+    ANDI  -> List(InstrI, FuType.alu, ALUOpType.and),
+
+    // U型指令
+    LUI   -> List(InstrU, FuType.alu, ALUOpType.add),
+    AUIPC -> List(InstrU, FuType.alu, ALUOpType.add),
+    
   )
 }
 
@@ -51,11 +88,26 @@ object RV64IInstr extends HasInstrType {
   def SUBW  = BitPat("b0100000_?????_?????_000_?????_0111011")
 
   val table = Array(
-    // TODO: 完成RV64I指令集的解析
+    // R型指令
+    ADDW  -> List(InstrR, FuType.alu, ALUOpType.addw),
+    SUBW  -> List(InstrR, FuType.alu, ALUOpType.subw),
+    SLLW  -> List(InstrR, FuType.alu, ALUOpType.sllw),
+    SRLW  -> List(InstrR, FuType.alu, ALUOpType.srlw),
+    SRAW  -> List(InstrR, FuType.alu, ALUOpType.sraw),
+
+    // I型指令
+    ADDIW -> List(InstrI, FuType.alu, ALUOpType.addw),
+    SLLIW -> List(InstrI, FuType.alu, ALUOpType.sllw),
+    SRLIW -> List(InstrI, FuType.alu, ALUOpType.srlw),
+    SRAIW -> List(InstrI, FuType.alu, ALUOpType.sraw),
   )
 }
 
 object RVIInstr extends CoreParameter {
   val table = RV32I_ALUInstr.table ++
-    (if (XLEN == 64) RV64IInstr.table else Array.empty)
+    (if (XLEN == 64) RV64IInstr.table else Array.empty) ++
+    (if (cpuConfig.hasMExtension) RV64MInstr.table else Array.empty) ++
+    RVMemInstr.table ++
+    RVBranchInstr.table ++
+    (if (cpuConfig.hasZicsrExtension) RVCSRInstr.table else Array.empty)
 }
