@@ -47,6 +47,15 @@ module top(
     output[63:0]debug_rf_wdata
 );
 
+// 定义默认值
+wire [1:0]  axi_awlock = 2'b0;  // 非原子访问
+wire [3:0]  axi_awcache = 4'b0;  // 非缓存访问
+wire [2:0]  axi_awprot = 3'b0;   // 非特权访问
+wire [3:0]  axi_wid = 4'h1;      // 写ID
+wire [1:0]  axi_arlock = 2'b0;   // 非原子访问
+wire [3:0]  axi_arcache = 4'b0;  // 非缓存访问
+wire [2:0]  axi_arprot = 3'b0;   // 非特权访问
+
 PuaCpu core(
     .clock                    (clock),
     .reset                    (reset),
@@ -55,40 +64,50 @@ PuaCpu core(
     .io_ext_int_msi           (msi), // to CLINT
     .io_ext_int_mti           (mti), // to CLINT
     .io_ext_int_sei           (sei), // to PLIC
+    // 添加AXI时钟和复位信号
+    .io_axi_aclock            (clock),
+    .io_axi_areset            (reset),
     // aw 
-    .io_axi_aw_bits_id        (axi_awid),
-    .io_axi_aw_bits_addr      (axi_awaddr),
-    .io_axi_aw_bits_len       (axi_awlen),
-    .io_axi_aw_bits_size      (axi_awsize),
-    .io_axi_aw_bits_burst     (axi_awburst),
-    .io_axi_aw_valid          (axi_awvalid),
-    .io_axi_aw_ready          (axi_awready),
+    .io_axi_awid              (axi_awid),
+    .io_axi_awaddr            (axi_awaddr),
+    .io_axi_awlen             (axi_awlen),
+    .io_axi_awsize            (axi_awsize),
+    .io_axi_awburst           (axi_awburst),
+    .io_axi_awvalid           (axi_awvalid),
+    .io_axi_awready           (axi_awready),
+    .io_axi_awlock            (axi_awlock),
+    .io_axi_awcache           (axi_awcache),
+    .io_axi_awprot            (axi_awprot),
     // w 
-    .io_axi_w_bits_data       (axi_wdata),
-    .io_axi_w_bits_strb       (axi_wstrb),
-    .io_axi_w_bits_last       (axi_wlast),
-    .io_axi_w_valid           (axi_wvalid),
-    .io_axi_w_ready           (axi_wready),
+    .io_axi_wdata             (axi_wdata),
+    .io_axi_wstrb             (axi_wstrb),
+    .io_axi_wlast             (axi_wlast),
+    .io_axi_wvalid            (axi_wvalid),
+    .io_axi_wready            (axi_wready),
+    .io_axi_wid               (axi_wid),
     // b 
-    .io_axi_b_bits_id         (axi_bid),
-    .io_axi_b_bits_resp       (axi_bresp),
-    .io_axi_b_valid           (axi_bvalid),
-    .io_axi_b_ready           (axi_bready),
+    .io_axi_bid               (axi_bid),
+    .io_axi_bresp             (axi_bresp),
+    .io_axi_bvalid            (axi_bvalid),
+    .io_axi_bready            (axi_bready),
     // ar 
-    .io_axi_ar_bits_id        (axi_arid),
-    .io_axi_ar_bits_addr      (axi_araddr),
-    .io_axi_ar_bits_len       (axi_arlen),
-    .io_axi_ar_bits_size      (axi_arsize),
-    .io_axi_ar_bits_burst     (axi_arburst),
-    .io_axi_ar_valid          (axi_arvalid),
-    .io_axi_ar_ready          (axi_arready),
+    .io_axi_arid              (axi_arid),
+    .io_axi_araddr            (axi_araddr),
+    .io_axi_arlen             (axi_arlen),
+    .io_axi_arsize            (axi_arsize),
+    .io_axi_arburst           (axi_arburst),
+    .io_axi_arvalid           (axi_arvalid),
+    .io_axi_arready           (axi_arready),
+    .io_axi_arlock            (axi_arlock),
+    .io_axi_arcache           (axi_arcache),
+    .io_axi_arprot            (axi_arprot),
     // r 
-    .io_axi_r_bits_id         (axi_rid),
-    .io_axi_r_bits_data       (axi_rdata),
-    .io_axi_r_bits_resp       (axi_rresp),
-    .io_axi_r_bits_last       (axi_rlast),
-    .io_axi_r_valid           (axi_rvalid),
-    .io_axi_r_ready           (axi_rready),
+    .io_axi_rid               (axi_rid),
+    .io_axi_rdata             (axi_rdata),
+    .io_axi_rresp             (axi_rresp),
+    .io_axi_rlast             (axi_rlast),
+    .io_axi_rvalid            (axi_rvalid),
+    .io_axi_rready            (axi_rready),
     // debug
     .io_debug_pc              (debug_pc),
     .io_debug_commit          (debug_commit),

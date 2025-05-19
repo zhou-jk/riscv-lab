@@ -5,13 +5,14 @@ import chisel3.util._
 import cpu.CpuConfig
 import cpu.defines._
 import cpu.defines.Const._
+import cpu.defines.AXIParam._
 import chisel3.util.experimental.BoringUtils
 
 class ExecuteUnit extends Module {
   val io = IO(new Bundle {
     val executeStage = Input(new DecodeUnitExecuteUnit())
     val memoryStage  = Output(new ExecuteUnitMemoryUnit())
-    val dataSram     = new DataSram()
+    val dcache       = new DCacheIO()
     
     val flush = Output(Bool())
     val target = Output(UInt(XLEN.W))
@@ -30,7 +31,20 @@ class ExecuteUnit extends Module {
   fu.data.ex       := io.executeStage.data.ex
   fu.interrupt     := io.interrupt
 
-  io.dataSram <> fu.dataSram
+  io.dcache.en    := fu.dataSram.en
+  io.dcache.wen   := fu.dataSram.wen =/= 0.U
+  io.dcache.size  := MuxLookup(fu.dataSram.wen, 0.U)(Seq(
+    "b00000001".U -> AXI_SIZE_1B,
+    "b00000011".U -> AXI_SIZE_2B,
+    "b00001111".U -> AXI_SIZE_4B,
+    "b11111111".U -> AXI_SIZE_8B
+  ))
+  io.dcache.addr  := fu.dataSram.addr
+  io.dcache.wdata := fu.dataSram.wdata
+  io.dcache.wstrb := fu.dataSram.wen
+  io.dcache.finish_single_request := true.B
+
+  fu.dataSram.rdata := io.dcache.rdata
 
   io.mode  := fu.mode
   io.flush := fu.flush
@@ -46,7 +60,7 @@ class ExecuteUnit extends Module {
 
   val src_info_mem = Wire(new SrcInfo())
   src_info_mem.src1_data := fu.data.src_info.src1_data
-  src_info_mem.src2_data := io.dataSram.rdata
+  src_info_mem.src2_data := io.dcache.rdata
   
   mem_data.src_info := src_info_mem
   io.memoryStage.data := mem_data

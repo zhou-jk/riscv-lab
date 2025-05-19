@@ -6,12 +6,12 @@ import chisel3.util._
 import defines._
 import defines.Const._
 import pipeline._
+import cache._
 
 class Core extends Module {
   val io = IO(new Bundle {
     val interrupt = Input(new ExtInterrupt())
-    val instSram  = new InstSram()
-    val dataSram  = new DataSram()
+    val axi       = new AXIMaster() // 替换SRAM接口为AXI接口
     val debug     = new DEBUG()
   })
 
@@ -26,6 +26,20 @@ class Core extends Module {
   val writeBackStage = Module(new WriteBackStage()).io
   val writeBackUnit  = Module(new WriteBackUnit()).io
   val controlUnit    = Module(new ControlUnit()).io
+  
+  // 添加ICache和DCache以及AXI转接桥
+  val icache            = Module(new ICache()).io
+  val dcache            = Module(new DCache()).io
+  val cacheAXIInterface = Module(new CacheAXIInterface()).io
+  
+  // 连接ICache和DCache到AXI
+  icache.axi <> cacheAXIInterface.icache
+  dcache.axi <> cacheAXIInterface.dcache
+  cacheAXIInterface.axi <> io.axi
+  
+  // 将ICache和DCache连接到CPU
+  fetchUnit.icache <> icache.cpu
+  executeUnit.dcache <> dcache.cpu
 
   // 控制单元
   controlUnit.decodeUnitInfo    := decodeUnit.executeStage.data.info
@@ -33,9 +47,10 @@ class Core extends Module {
   controlUnit.memoryUnitInfo    := memoryUnit.writeBackStage.data.info
   controlUnit.writeBackUnitInfo := writeBackUnit.writeBackStage.data.info
   controlUnit.flush            := executeUnit.flush
+  controlUnit.icache_stall     := icache.cpu.stall
+  controlUnit.dcache_stall     := dcache.cpu.stall
 
   // 取指单元
-  fetchUnit.instSram <> io.instSram
   fetchUnit.decodeStage <> decodeStage.fetchUnit
   fetchUnit.flush := executeUnit.flush
   fetchUnit.target := executeUnit.target
@@ -100,11 +115,7 @@ class Core extends Module {
   // 访存阶段
   memoryStage.memoryUnit <> memoryUnit.memoryStage
   memoryStage.ctrl := controlUnit.executeUnitCtrl
-
-  io.dataSram.rdata <> memoryUnit.rdata
   memoryUnit.writeBackStage <> writeBackStage.memoryUnit
-
-  executeUnit.dataSram <> io.dataSram
 
   // 写回阶段
   writeBackStage.writeBackUnit <> writeBackUnit.writeBackStage

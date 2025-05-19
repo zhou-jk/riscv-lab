@@ -18,6 +18,9 @@ class ControlUnit extends Module {
     val writeBackUnitInfo = Input(new Info())
     val flush = Input(Bool())
     
+    val icache_stall = Input(Bool())
+    val dcache_stall = Input(Bool())
+    
     val fetchUnitCtrl = Output(new CtrlSignal())
     val decodeUnitCtrl = Output(new CtrlSignal())
     val executeUnitCtrl = Output(new CtrlSignal())
@@ -33,8 +36,8 @@ class ControlUnit extends Module {
                     ((io.decodeUnitInfo.src1_ren && io.decodeUnitInfo.src1_raddr === io.executeUnitInfo.reg_waddr) || 
                      (io.decodeUnitInfo.src2_ren && io.decodeUnitInfo.src2_raddr === io.executeUnitInfo.reg_waddr))
 
-
-  val data_conflict = exe_conflict
+  val cache_stall = io.icache_stall || io.dcache_stall
+  val data_conflict = exe_conflict || cache_stall
 
   io.fetchUnitCtrl.allow_to_go := !data_conflict
   io.fetchUnitCtrl.do_flush := io.flush
@@ -42,12 +45,12 @@ class ControlUnit extends Module {
   io.decodeUnitCtrl.allow_to_go := !data_conflict
   io.decodeUnitCtrl.do_flush := io.flush
 
-  io.executeUnitCtrl.allow_to_go := true.B
+  io.executeUnitCtrl.allow_to_go := !cache_stall
   io.executeUnitCtrl.do_flush := false.B
 
-  io.memoryUnitCtrl.allow_to_go := true.B
+  io.memoryUnitCtrl.allow_to_go := !cache_stall
   io.memoryUnitCtrl.do_flush := false.B
 
-  io.writeBackUnitCtrl.allow_to_go := true.B
+  io.writeBackUnitCtrl.allow_to_go := !cache_stall
   io.writeBackUnitCtrl.do_flush := false.B
 }

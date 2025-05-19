@@ -10,6 +10,7 @@ class ExtInterrupt extends Bundle {
   val mei = Bool()
   val mti = Bool()
   val msi = Bool()
+  val sei = Bool()
 }
 
 class SrcInfo extends Bundle {

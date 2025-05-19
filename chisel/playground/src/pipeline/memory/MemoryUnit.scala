@@ -10,7 +10,6 @@ import cpu.CpuConfig
 class MemoryUnit extends Module {
   val io = IO(new Bundle {
     val memoryStage    = Input(new ExecuteUnitMemoryUnit())
-    val rdata          = Input(UInt(XLEN.W))
     val writeBackStage = Output(new MemoryUnitWriteBackUnit())
   })
 
@@ -19,7 +18,8 @@ class MemoryUnit extends Module {
 
   lsu_mem.info := io.memoryStage.data.info
   lsu_mem.src_info := io.memoryStage.data.src_info
-  lsu_mem.rdata := io.rdata
+  // 直接使用ExecuteUnit中传递的src_info.src2_data
+  lsu_mem.rdata := io.memoryStage.data.src_info.src2_data
 
   io.writeBackStage.data.pc := io.memoryStage.data.pc
   io.writeBackStage.data.info := io.memoryStage.data.info
