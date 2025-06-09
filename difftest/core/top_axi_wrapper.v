@@ -87,7 +87,7 @@ always @(posedge clock) begin
     end
     
     // 每10个周期输出状态 (仿真调试用)
-    if (cycle_count % 10 == 0) begin
+    if (cycle_count < 50 || cycle_count % 10 == 0) begin
         // 打印AXI信号状态和统计数据
         $display("[Cycle %0d] PC=%h, AR: valid=%b ready=%b addr=%h, AR_CNT=%0d", 
                  cycle_count, debug_pc, axi_arvalid, axi_arready, axi_araddr, ar_req_count);

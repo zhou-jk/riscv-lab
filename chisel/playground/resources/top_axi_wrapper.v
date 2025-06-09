@@ -56,6 +56,66 @@ wire [1:0]  axi_arlock = 2'b0;   // 非原子访问
 wire [3:0]  axi_arcache = 4'b0;  // 非缓存访问
 wire [2:0]  axi_arprot = 3'b0;   // 非特权访问
 
+// 调试辅助变量
+reg [15:0] cycle_count;
+initial cycle_count = 0;
+
+// 记录AXI握手信号计数
+reg [31:0] ar_req_count = 0;
+reg [31:0] r_data_count = 0;
+reg [31:0] commit_count = 0;
+
+always @(posedge clock) begin
+    if (reset) begin
+        cycle_count <= 0;
+        ar_req_count <= 0;
+        r_data_count <= 0;
+        commit_count <= 0;
+    end
+    else begin
+        cycle_count <= cycle_count + 1;
+        
+        // 计数AR请求和R响应
+        if (axi_arvalid && axi_arready)
+            ar_req_count <= ar_req_count + 1;
+            
+        if (axi_rvalid && axi_rready)
+            r_data_count <= r_data_count + 1;
+            
+        if (debug_commit)
+            commit_count <= commit_count + 1;
+    end
+    
+    // 每10个周期输出状态 (仿真调试用)
+    if (cycle_count < 50 || cycle_count % 10 == 0) begin
+        // 打印AXI信号状态和统计数据
+        $display("[Cycle %0d] PC=%h, AR: valid=%b ready=%b addr=%h, AR_CNT=%0d", 
+                 cycle_count, debug_pc, axi_arvalid, axi_arready, axi_araddr, ar_req_count);
+        $display("[Cycle %0d] R: valid=%b ready=%b data=%h, R_CNT=%0d, Commit=%0d", 
+                 cycle_count, axi_rvalid, axi_rready, axi_rdata, r_data_count, commit_count);
+    end
+    
+    // AXI握手监控
+    if (axi_arvalid && axi_arready) begin
+        $display("[Cycle %0d] AR-HANDSHAKE: araddr=%h, arid=%h", 
+                 cycle_count, axi_araddr, axi_arid);
+    end
+    
+    if (axi_rvalid && axi_rready) begin
+        $display("[Cycle %0d] R-HANDSHAKE: rdata=%h, rid=%h, rlast=%b", 
+                 cycle_count, axi_rdata, axi_rid, axi_rlast);
+    end
+    
+    // 长时间无响应检测
+    if (axi_arvalid && !axi_arready && cycle_count > 100 && cycle_count % 100 == 0) begin
+        $display("[WARN] ARVALID asserted for %0d cycles without ARREADY", cycle_count);
+    end
+    
+    if (axi_rvalid && !axi_rready && cycle_count > 100 && cycle_count % 100 == 0) begin
+        $display("[WARN] RVALID asserted for %0d cycles without RREADY", cycle_count);
+    end
+end
+
 PuaCpu core(
     .clock                    (clock),
     .reset                    (reset),
